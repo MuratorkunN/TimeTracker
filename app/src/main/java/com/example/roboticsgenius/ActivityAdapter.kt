@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.roboticsgenius.databinding.ItemActivityBinding
 
-class ActivityAdapter : ListAdapter<Activity, ActivityAdapter.ActivityViewHolder>(ActivityDiffCallback()) {
+class ActivityAdapter(private val onStartClick: (Activity) -> Unit) : ListAdapter<Activity, ActivityAdapter.ActivityViewHolder>(ActivityDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ActivityViewHolder {
         val binding = ItemActivityBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -19,10 +19,10 @@ class ActivityAdapter : ListAdapter<Activity, ActivityAdapter.ActivityViewHolder
         holder.bind(activity)
     }
 
-    class ActivityViewHolder(private val binding: ItemActivityBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class ActivityViewHolder(private val binding: ItemActivityBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(activity: Activity) {
             binding.textViewActivityName.text = activity.name
-            // We will add button logic here later
+            binding.buttonStartStop.setOnClickListener { onStartClick(activity) }
         }
     }
 }
