@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- We use a ScrollView as the root to ensure everything is visible -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"> <!-- This attribute is important -->
+
+    <!-- A single LinearLayout holds all our content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        tools:context=".AddActivityFragment">
+
+        <TextView
+            style="@style/TextAppearance.Material3.HeadlineSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create New Activity" />
+
+        <!-- Activity Name -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Activity Name">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextActivityName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Color Selection -->
+        <TextView
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Color" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupColor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true">
+                <!-- Chips added programmatically -->
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
+
+        <!-- Target Duration -->
+        <TextView
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Target Duration" />
+
+        <!-- Quick Duration Buttons -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <Button android:id="@+id/btn5min" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5 min" />
+                <Button android:id="@+id/btn10min" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="10 min" />
+                <Button android:id="@+id/btn30min" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="30 min" />
+                <Button android:id="@+id/btn1hr" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="1 hr" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- Number Pickers -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <NumberPicker android:id="@+id/pickerHours" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="h" android:layout_marginHorizontal="8dp"/>
+            <NumberPicker android:id="@+id/pickerMinutes" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="m" android:layout_marginHorizontal="8dp"/>
+            <NumberPicker android:id="@+id/pickerSeconds" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="s" android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
+        <!-- Target Period -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleGroupPeriod"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+            <Button style="?attr/materialButtonOutlinedStyle" android:id="@+id/btnDaily" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Daily" />
+            <Button style="?attr/materialButtonOutlinedStyle" android:id="@+id/btnWeekly" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Weekly" />
+            <Button style="?attr/materialButtonOutlinedStyle" android:id="@+id/btnMonthly" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Monthly" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- Spacer to push the button down -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Create Button -->
+        <Button
+            android:id="@+id/btnCreateActivity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Create New Activity" />
+
+    </LinearLayout>
+</ScrollView>

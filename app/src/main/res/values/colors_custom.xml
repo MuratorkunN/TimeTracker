@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="chip_checked_background">#808080</color> <!-- Gray -->
+    <color name="chip_unchecked_background">#333333</color> <!-- Dark Gray -->
+    <color name="chip_checked_stroke">#FFFFFF</color> <!-- White -->
+    <color name="chip_unchecked_stroke">#808080</color> <!-- Gray -->
+</resources>
