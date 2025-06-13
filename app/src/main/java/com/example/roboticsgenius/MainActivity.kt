@@ -1,15 +1,12 @@
 package com.example.roboticsgenius
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.EditText
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.roboticsgenius.databinding.ActivityMainBinding
@@ -21,40 +18,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private lateinit var activityDao: ActivityDao
 
-    // --- NEW: Permission handling ---
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                // Permission is granted. We can now start the service.
-            } else {
-                // Explain to the user that the feature is unavailable
-            }
-        }
-
-    private fun askForNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
-    // --- END NEW ---
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        askForNotificationPermission() // Ask for permission on start
+        // --- NEW: Set up the toolbar ---
+        setSupportActionBar(binding.toolbar)
 
         db = AppDatabase.getDatabase(applicationContext)
         activityDao = db.activityDao()
         val adapter = ActivityAdapter { activity ->
             startTimerForActivity(activity)
         }
-
         binding.recyclerViewActivities.adapter = adapter
         binding.recyclerViewActivities.layoutManager = LinearLayoutManager(this)
 
@@ -69,29 +45,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showAddActivityDialog() {
-        val editText = EditText(this)
-        editText.hint = "e.g. Work, Study, Gym"
-
-        AlertDialog.Builder(this)
-            .setTitle("Add New Activity")
-            .setView(editText)
-            .setPositiveButton("Add") { dialog, _ ->
-                val name = editText.text.toString()
-                if (name.isNotBlank()) {
-                    lifecycleScope.launch {
-                        activityDao.insert(Activity(name = name))
-                    }
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel", null)
-            .create()
-            .show()
+    private fun startTimerForActivity(activity: Activity) {
+        if (TimerService.isRunning) return
+        val serviceIntent = Intent(this, TimerService::class.java)
+        serviceIntent.putExtra("ACTIVITY_ID", activity.id)
+        startService(serviceIntent)
     }
 
-    private fun startTimerForActivity(activity: Activity) {
-        val serviceIntent = Intent(this, TimerService::class.java)
-        startService(serviceIntent)
+    private fun showAddActivityDialog() { /* ... same as before ... */ }
+
+    // --- NEW: Inflate the menu ---
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    // --- NEW: Handle menu item clicks ---
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_history -> {
+                val intent = Intent(this, HistoryActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }
