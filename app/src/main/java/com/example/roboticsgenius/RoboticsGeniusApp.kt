@@ -14,15 +14,14 @@ class RoboticsGeniusApp : Application() {
     }
 
     private fun createNotificationChannel() {
-        // THIS IS THE FIX: Only create the channel on API 26+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Timer Service Channel"
             val descriptionText = "Channel for the active timer notification"
-            val importance = NotificationManager.IMPORTANCE_LOW // Use LOW to avoid sound
+            // THE FIX IS HERE: Changed LOW to DEFAULT
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel("TIMER_SERVICE_CHANNEL", name, importance).apply {
                 description = descriptionText
             }
-            // Register the channel with the system
             val notificationManager: NotificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
