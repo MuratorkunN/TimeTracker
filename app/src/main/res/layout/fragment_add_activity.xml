@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- We use a ScrollView as the root to ensure everything is visible -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"> <!-- This attribute is important -->
+    android:fillViewport="true">
 
-    <!-- A single LinearLayout holds all our content -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -21,20 +19,17 @@
             android:layout_height="wrap_content"
             android:text="Create New Activity" />
 
-        <!-- Activity Name -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="Activity Name">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editTextActivityName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Color Selection -->
         <TextView
             style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="wrap_content"
@@ -50,13 +45,9 @@
                 android:id="@+id/chipGroupColor"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:singleSelection="true">
-                <!-- Chips added programmatically -->
-            </com.google.android.material.chip.ChipGroup>
+                app:singleSelection="true" />
         </HorizontalScrollView>
 
-
-        <!-- Target Duration -->
         <TextView
             style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="wrap_content"
@@ -64,7 +55,6 @@
             android:layout_marginTop="16dp"
             android:text="Target Duration" />
 
-        <!-- Quick Duration Buttons -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -80,13 +70,11 @@
             </LinearLayout>
         </HorizontalScrollView>
 
-        <!-- Number Pickers -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="horizontal">
-
             <NumberPicker android:id="@+id/pickerHours" android:layout_width="wrap_content" android:layout_height="wrap_content" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="h" android:layout_marginHorizontal="8dp"/>
             <NumberPicker android:id="@+id/pickerMinutes" android:layout_width="wrap_content" android:layout_height="wrap_content" />
@@ -95,7 +83,6 @@
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="s" android:layout_marginStart="8dp"/>
         </LinearLayout>
 
-        <!-- Target Period -->
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/toggleGroupPeriod"
             android:layout_width="match_parent"
@@ -108,13 +95,11 @@
             <Button style="?attr/materialButtonOutlinedStyle" android:id="@+id/btnMonthly" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Monthly" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
-        <!-- Spacer to push the button down -->
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Create Button -->
         <Button
             android:id="@+id/btnCreateActivity"
             android:layout_width="match_parent"

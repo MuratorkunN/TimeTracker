@@ -16,9 +16,7 @@ interface ActivityDao {
     @Insert
     suspend fun insertTimeLog(log: TimeLogEntry)
 
-    // --- NEW, POWERFUL QUERY ---
-    // This query looks at both tables, joins them by the activityId,
-    // and returns our new combined data object.
+    // This is the function for the HISTORY/TIMELINE screen. It was missing.
     @Query("""
         SELECT a.name as activityName, t.durationInSeconds, t.startTime
         FROM time_log_entries t
@@ -26,4 +24,8 @@ interface ActivityDao {
         ORDER BY t.startTime DESC
     """)
     fun getAllLogsWithActivityNames(): Flow<List<TimeLogWithActivityName>>
+
+    // This is the function for the STREAK calculation. It was missing.
+    @Query("SELECT * FROM time_log_entries WHERE activityId = :activityId ORDER BY startTime DESC")
+    suspend fun getLogsForActivity(activityId: Int): List<TimeLogEntry>
 }
