@@ -1,8 +1,11 @@
-// AppDatabase.kt
+// app/src/main/java/com/example/roboticsgenius/AppDatabase.kt
+
 package com.example.roboticsgenius
 import android.content.Context
 import androidx.room.*
-@Database(entities = [Activity::class, TimeLogEntry::class], version = 3, exportSchema = false)
+
+// THE FIX: Bumping the version number to 4
+@Database(entities = [Activity::class, TimeLogEntry::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun activityDao(): ActivityDao
     companion object {

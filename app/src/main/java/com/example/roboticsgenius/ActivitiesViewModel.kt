@@ -1,12 +1,12 @@
+// app/src/main/java/com/example/roboticsgenius/ActivitiesViewModel.kt
+
 package com.example.roboticsgenius
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
@@ -33,22 +33,51 @@ class ActivitiesViewModel(application: Application) : AndroidViewModel(applicati
             initialValue = emptyList()
         )
 
+    fun deleteActivity(activity: Activity) {
+        viewModelScope.launch {
+            activityDao.deleteActivityAndLogs(activity)
+        }
+    }
+
+    fun updateActivityOrder(activities: List<ActivityUiModel>) {
+        viewModelScope.launch {
+            val updatedActivities = activities.mapIndexed { index, uiModel ->
+                uiModel.activity.copy(orderIndex = index)
+            }
+            activityDao.updateActivities(updatedActivities)
+        }
+    }
+
+    fun updateActivity(activity: Activity) {
+        viewModelScope.launch {
+            activityDao.updateActivity(activity)
+        }
+    }
+
+    // NEW: Function to save a manually entered log
+    fun addManualLog(activityId: Int, startTime: Long, durationInSeconds: Int) {
+        viewModelScope.launch {
+            val logEntry = TimeLogEntry(
+                activityId = activityId,
+                startTime = startTime,
+                durationInSeconds = durationInSeconds
+            )
+            activityDao.insertTimeLog(logEntry)
+        }
+    }
+
     private fun generateStatusText(activity: Activity, logs: List<TimeLogEntry>, streak: Int): String {
         if (activity.targetDurationSeconds <= 0) {
             return "No target set"
         }
-
         val (start, end) = getPeriodTimestamps(activity.targetPeriod)
         val durationInPeriod = logs.filter { it.startTime in start..end }.sumOf { it.durationInSeconds }
-
         if (durationInPeriod >= activity.targetDurationSeconds) {
-            return "You're on a ${streak}-day streak!"
+            return if (streak > 0) "You're on a ${streak}-day streak!" else "Target met!"
         }
-
         val remainingSeconds = activity.targetDurationSeconds - durationInPeriod
         val hours = TimeUnit.SECONDS.toHours(remainingSeconds.toLong())
         val minutes = TimeUnit.SECONDS.toMinutes(remainingSeconds.toLong()) % 60
-
         val timeStr = when {
             hours > 0 -> "${hours}h ${minutes}m"
             minutes > 0 -> "${minutes}m"

@@ -1,4 +1,5 @@
-// AddActivityFragment.kt
+// app/src/main/java/com/example/roboticsgenius/AddActivityFragment.kt
+
 package com.example.roboticsgenius
 import android.graphics.Color
 import android.os.Bundle
@@ -6,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
@@ -37,19 +37,15 @@ class AddActivityFragment : BottomSheetDialogFragment() {
     private fun setupColorChips() {
         colors.forEach { (name, hex) ->
             val chip = Chip(context).apply {
-                text = name
-                isCheckable = true
+                text = name; isCheckable = true
                 chipBackgroundColor = android.content.res.ColorStateList.valueOf(Color.parseColor(hex))
-                chipStrokeWidth = 0f
-                setTextColor(Color.parseColor("#FFFFFF"))
+                chipStrokeWidth = 0f; setTextColor(Color.parseColor("#FFFFFF"))
                 setOnCheckedChangeListener { _, isChecked ->
                     if (isChecked) {
                         selectedColorHex = hex
                         chipStrokeColor = android.content.res.ColorStateList.valueOf(Color.WHITE)
                         chipStrokeWidth = 4f
-                    } else {
-                        chipStrokeWidth = 0f
-                    }
+                    } else { chipStrokeWidth = 0f }
                 }
             }
             binding.chipGroupColor.addView(chip)
@@ -79,7 +75,20 @@ class AddActivityFragment : BottomSheetDialogFragment() {
             if (name.isBlank()) { Toast.makeText(context, "Activity name cannot be empty", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
             val duration = binding.pickerHours.value * 3600 + binding.pickerMinutes.value * 60 + binding.pickerSeconds.value
             val period = when (binding.toggleGroupPeriod.checkedButtonId) { R.id.btnDaily -> "Daily"; R.id.btnWeekly -> "Weekly"; R.id.btnMonthly -> "Monthly"; else -> "Weekly" }
-            lifecycleScope.launch { db.activityDao().insert(Activity(name = name, color = selectedColorHex, targetDurationSeconds = duration, targetPeriod = period)); dismiss() }
+
+            lifecycleScope.launch {
+                // THE FIX: Calculate the new orderIndex
+                val maxIndex = db.activityDao().getMaxOrderIndex() ?: -1
+                val newActivity = Activity(
+                    name = name,
+                    color = selectedColorHex,
+                    targetDurationSeconds = duration,
+                    targetPeriod = period,
+                    orderIndex = maxIndex + 1
+                )
+                db.activityDao().insert(newActivity)
+                dismiss()
+            }
         }
     }
 

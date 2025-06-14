@@ -1,4 +1,5 @@
 // app/src/main/java/com/example/roboticsgenius/ActivitiesFragment.kt
+
 package com.example.roboticsgenius
 
 import android.content.Intent
@@ -6,21 +7,28 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.roboticsgenius.databinding.FragmentActivitiesBinding
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.Collections
 
 class ActivitiesFragment : Fragment() {
     private var _binding: FragmentActivitiesBinding? = null
     private val binding get() = _binding!!
     private lateinit var activityAdapter: ActivityAdapter
     private val viewModel: ActivitiesViewModel by viewModels()
+    private lateinit var itemTouchHelper: ItemTouchHelper
+    private var isDragging = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentActivitiesBinding.inflate(inflater, container, false)
@@ -30,61 +38,111 @@ class ActivitiesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
-
-        binding.fabAddActivity.setOnClickListener {
-            AddActivityFragment().show(parentFragmentManager, "AddActivityDialog")
-        }
-
+        setupDragAndDrop()
+        binding.fabAddActivity.setOnClickListener { AddActivityFragment().show(parentFragmentManager, "AddActivityDialog") }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                // This coroutine collects the list of activities from the ViewModel
-                // and submits it to the adapter.
                 launch {
                     viewModel.activitiesUiModel.collectLatest { activities ->
-                        activityAdapter.submitList(activities)
+                        if (!isDragging) {
+                            activityAdapter.submitList(activities)
+                        }
                     }
                 }
-
-                // This second coroutine observes the timer state from the Service
-                // and passes it to the adapter for real-time UI updates (like the ticking clock)
-                launch {
-                    TimerService.activeActivityId.collect { id ->
-                        activityAdapter.setActiveTimerState(activeId = id)
-                    }
-                }
-                launch {
-                    TimerService.timeElapsed.collect { time ->
-                        activityAdapter.setActiveTimerState(time = time)
-                    }
-                }
-                launch {
-                    TimerService.isPaused.collect { isPaused ->
-                        activityAdapter.setActiveTimerState(isPaused = isPaused)
-                    }
-                }
+                launch { TimerService.activeActivityId.collect { id -> activityAdapter.setActiveTimerState(activeId = id) } }
+                launch { TimerService.timeElapsed.collect { time -> activityAdapter.setActiveTimerState(time = time) } }
+                launch { TimerService.isPaused.collect { isPaused -> activityAdapter.setActiveTimerState(isPaused = isPaused) } }
             }
         }
     }
 
+    private fun setupDragAndDrop() {
+        val simpleCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder
+            ): Boolean {
+                val fromPosition = viewHolder.adapterPosition
+                val toPosition = target.adapterPosition
+                val currentList = activityAdapter.currentList.toMutableList()
+                if (fromPosition != RecyclerView.NO_POSITION && toPosition != RecyclerView.NO_POSITION) {
+                    Collections.swap(currentList, fromPosition, toPosition)
+                    activityAdapter.submitList(currentList, false)
+                }
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    showDeleteConfirmation(activityAdapter.currentList[position].activity)
+                    activityAdapter.notifyItemChanged(position)
+                }
+            }
+
+            override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(viewHolder, actionState)
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) { isDragging = true }
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                isDragging = false
+                viewModel.updateActivityOrder(activityAdapter.currentList)
+            }
+
+            override fun isLongPressDragEnabled(): Boolean = TimerService.activeActivityId.value == null
+            override fun isItemViewSwipeEnabled(): Boolean = TimerService.activeActivityId.value == null
+        }
+        itemTouchHelper = ItemTouchHelper(simpleCallback)
+        itemTouchHelper.attachToRecyclerView(binding.recyclerViewActivities)
+    }
+
+    private fun showDeleteConfirmation(activity: Activity) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Activity")
+            .setMessage("Are you sure you want to delete '${activity.name}' and all its logged time? This cannot be undone.")
+            .setPositiveButton("Delete") { _, _ ->
+                viewModel.deleteActivity(activity)
+                Snackbar.make(binding.root, "'${activity.name}' deleted", Snackbar.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                activityAdapter.notifyDataSetChanged()
+                dialog.dismiss()
+            }
+            .setOnCancelListener { activityAdapter.notifyDataSetChanged() }
+            .show()
+    }
+
+    private fun showEditTargetDialog(activityId: Int) {
+        EditTargetFragment.newInstance(activityId).show(parentFragmentManager, "EditTargetDialog")
+    }
+
+    // NEW: Function to show the add log dialog
+    private fun showAddLogDialog(activityId: Int) {
+        AddLogFragment.newInstance(activityId).show(parentFragmentManager, "AddLogDialog")
+    }
+
     private fun setupRecyclerView() {
         activityAdapter = ActivityAdapter(
-            onStartClick = { activity -> startTimerForActivity(activity) },
+            onStartClick = { uiModel -> startTimerForActivity(uiModel.activity) },
             onStopClick = { sendServiceAction(TimerService.ACTION_STOP) },
             onPauseResumeClick = { isPaused ->
                 val action = if (isPaused) TimerService.ACTION_RESUME else TimerService.ACTION_PAUSE
                 sendServiceAction(action)
             },
-            onCancelClick = { sendServiceAction(TimerService.ACTION_CANCEL) }
+            onCancelClick = { sendServiceAction(TimerService.ACTION_CANCEL) },
+            onEditTargetClick = { uiModel -> showEditTargetDialog(uiModel.activity.id) },
+            onAddLogClick = { uiModel -> showAddLogDialog(uiModel.activity.id) } // NEW
         )
         binding.recyclerViewActivities.adapter = activityAdapter
         binding.recyclerViewActivities.layoutManager = LinearLayoutManager(requireContext())
     }
 
     private fun sendServiceAction(action: String) {
-        Intent(requireContext(), TimerService::class.java).also {
-            it.action = action
-            requireContext().startService(it)
-        }
+        Intent(requireContext(), TimerService::class.java).also { it.action = action; requireContext().startService(it) }
     }
 
     private fun startTimerForActivity(activity: Activity) {

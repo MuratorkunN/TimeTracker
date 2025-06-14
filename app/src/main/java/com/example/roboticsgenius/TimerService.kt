@@ -84,18 +84,17 @@ class TimerService : Service() {
                     timerJob?.cancel()
                     timerJob = serviceScope.launch {
                         while (isActive) {
+                            // First, update the UI with the current state (starts at 0)
+                            updatePlaybackState()
+                            updateNotificationMetadata()
+                            // Then, wait for one second
+                            delay(1000)
+                            // Finally, increment the timer for the next loop
                             if (!_isPaused.value) {
                                 _timeElapsed.update { it + 1 }
                             }
-                            // These two must be called every second to update UI
-                            updatePlaybackState()
-                            updateNotificationMetadata() // Ensures subtitle text updates
-                            delay(1000)
                         }
                     }
-                    // Initial update and start foreground
-                    updatePlaybackState()
-                    updateNotificationMetadata()
                     startForeground(NOTIFICATION_ID, createNotification())
                 }
             }
@@ -125,20 +124,15 @@ class TimerService : Service() {
         mediaSession.setPlaybackState(stateBuilder.build())
     }
 
-    // NEW FUNCTION: Separated metadata update logic
     private fun updateNotificationMetadata() {
         val activity = currentActivity ?: return
         val metadata = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, activity.name)
-            // *** THE FIX IS HERE ***
-            // Set the subtitle to the formatted time of the current session.
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, formatTime(_timeElapsed.value))
             .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, createColoredBitmap(activity.color))
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (activity.targetDurationSeconds * 1000).toLong())
             .build()
         mediaSession.setMetadata(metadata)
-
-        // We also need to rebuild the notification itself to see this change immediately
         notificationManager.notify(NOTIFICATION_ID, createNotification())
     }
 
@@ -185,7 +179,6 @@ class TimerService : Service() {
         val pauseResumeIcon = if (_isPaused.value) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
         val pauseResumeTitle = if (_isPaused.value) "Resume" else "Pause"
 
-        // The builder now doesn't need to set text, as the system pulls it from the metadata.
         val builder = NotificationCompat.Builder(this, "TIMER_SERVICE_CHANNEL")
             .setStyle(
                 MediaNotificationCompat.MediaStyle()
