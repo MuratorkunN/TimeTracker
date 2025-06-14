@@ -1,4 +1,5 @@
 // app/src/main/java/com/example/roboticsgenius/ActivityDao.kt
+
 package com.example.roboticsgenius
 
 import androidx.room.Dao
@@ -8,8 +9,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ActivityDao {
-    // ... (insert, getAllActivities, getActivityById, insertTimeLog) ...
-
     @Insert
     suspend fun insert(activity: Activity)
 
@@ -23,7 +22,11 @@ interface ActivityDao {
     suspend fun insertTimeLog(log: TimeLogEntry)
 
     @Query("SELECT * FROM time_log_entries ORDER BY startTime DESC")
-    fun getAllTimeLogs(): Flow<List<TimeLogEntry>> // ADD THIS FUNCTION
+    fun getAllTimeLogs(): Flow<List<TimeLogEntry>>
+
+    // NEW FUNCTION: Gets logs for an activity between a start and end time.
+    @Query("SELECT * FROM time_log_entries WHERE activityId = :activityId AND startTime >= :startTime AND startTime <= :endTime")
+    suspend fun getLogsForActivityInRange(activityId: Int, startTime: Long, endTime: Long): List<TimeLogEntry>
 
     @Query("""
         SELECT a.name as activityName, t.durationInSeconds, t.startTime

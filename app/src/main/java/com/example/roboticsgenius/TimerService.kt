@@ -1,16 +1,22 @@
 // app/src/main/java/com/example/roboticsgenius/TimerService.kt
 
 package com.example.roboticsgenius
+
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.os.IBinder
+import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
+import androidx.media.app.NotificationCompat as MediaNotificationCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import java.util.*
-import androidx.media.app.NotificationCompat as MediaNotificationCompat
+import java.util.Calendar
 
 class TimerService : Service() {
     private var timerJob: Job? = null
@@ -18,31 +24,23 @@ class TimerService : Service() {
     private lateinit var mediaSession: MediaSessionCompat
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var db: AppDatabase
-    private var startTime: Long = 0
+    private var startTimeMillis: Long = 0
+    private var currentActivity: Activity? = null
+    private var previouslyLoggedSeconds: Int = 0
 
     companion object {
-        // Public state flows for UI observation
         private val _timeElapsed = MutableStateFlow(0)
         val timeElapsed = _timeElapsed.asStateFlow()
-
         private val _activeActivityId = MutableStateFlow<Int?>(null)
         val activeActivityId = _activeActivityId.asStateFlow()
-
         private val _isPaused = MutableStateFlow(false)
         val isPaused = _isPaused.asStateFlow()
-
         private val _activeActivityName = MutableStateFlow("Timer")
         val activeActivityName = _activeActivityName.asStateFlow()
 
-        // Service Actions
-        const val ACTION_START = "ACTION_START"
-        const val ACTION_PAUSE = "ACTION_PAUSE"
-        const val ACTION_RESUME = "ACTION_RESUME"
-        const val ACTION_STOP = "ACTION_STOP"
-        const val ACTION_CANCEL = "ACTION_CANCEL"
-
-        // Intent Extras
-        const val EXTRA_ACTIVITY_ID = "EXTRA_ACTIVITY_ID"
+        const val ACTION_START = "ACTION_START"; const val ACTION_PAUSE = "ACTION_PAUSE"
+        const val ACTION_RESUME = "ACTION_RESUME"; const val ACTION_STOP = "ACTION_STOP"
+        const val ACTION_CANCEL = "ACTION_CANCEL"; const val EXTRA_ACTIVITY_ID = "EXTRA_ACTIVITY_ID"
         const val NOTIFICATION_ID = 1
     }
 
@@ -56,38 +54,48 @@ class TimerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> if (activeActivityId.value == null) {
-                intent.getIntExtra(EXTRA_ACTIVITY_ID, -1).takeIf { it != -1 }?.let {
-                    startTimer(it)
-                }
+                intent.getIntExtra(EXTRA_ACTIVITY_ID, -1).takeIf { it != -1 }?.let { startTimer(it) }
             }
             ACTION_PAUSE -> pauseTimer()
             ACTION_RESUME -> resumeTimer()
             ACTION_STOP -> stopAndSaveTimer()
             ACTION_CANCEL -> cancelTimer()
         }
-        return START_NOT_STICKY // More appropriate for timers that can be cancelled
+        return START_NOT_STICKY
     }
 
     private fun startTimer(activityId: Int) {
         serviceScope.launch {
             val activity = db.activityDao().getActivityById(activityId)
             activity?.let {
+                currentActivity = it
+                val (periodStart, periodEnd) = getPeriodTimestamps(it.targetPeriod)
+                val logsInPeriod = db.activityDao().getLogsForActivityInRange(it.id, periodStart, periodEnd)
+                previouslyLoggedSeconds = logsInPeriod.sumOf { log -> log.durationInSeconds }
+
                 withContext(Dispatchers.Main) {
                     _activeActivityName.value = it.name
                     _activeActivityId.value = activityId
                     _timeElapsed.value = 0
                     _isPaused.value = false
-                    startTime = System.currentTimeMillis()
+                    startTimeMillis = System.currentTimeMillis()
+                    mediaSession.isActive = true
 
+                    timerJob?.cancel()
                     timerJob = serviceScope.launch {
-                        while (true) {
+                        while (isActive) {
                             if (!_isPaused.value) {
-                                _timeElapsed.value++
-                                updateNotification()
+                                _timeElapsed.update { it + 1 }
                             }
+                            // These two must be called every second to update UI
+                            updatePlaybackState()
+                            updateNotificationMetadata() // Ensures subtitle text updates
                             delay(1000)
                         }
                     }
+                    // Initial update and start foreground
+                    updatePlaybackState()
+                    updateNotificationMetadata()
                     startForeground(NOTIFICATION_ID, createNotification())
                 }
             }
@@ -95,101 +103,127 @@ class TimerService : Service() {
     }
 
     private fun pauseTimer() {
+        if (_isPaused.value) return
         _isPaused.value = true
-        updateNotification()
+        updatePlaybackState()
+        notificationManager.notify(NOTIFICATION_ID, createNotification())
     }
 
     private fun resumeTimer() {
+        if (!_isPaused.value) return
         _isPaused.value = false
-        updateNotification()
+        updatePlaybackState()
+        notificationManager.notify(NOTIFICATION_ID, createNotification())
+    }
+
+    private fun updatePlaybackState() {
+        val state = if (_isPaused.value) PlaybackStateCompat.STATE_PAUSED else PlaybackStateCompat.STATE_PLAYING
+        val totalProgressMs = ((previouslyLoggedSeconds + _timeElapsed.value) * 1000).toLong()
+        val stateBuilder = PlaybackStateCompat.Builder()
+            .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_STOP)
+            .setState(state, totalProgressMs, 1.0f)
+        mediaSession.setPlaybackState(stateBuilder.build())
+    }
+
+    // NEW FUNCTION: Separated metadata update logic
+    private fun updateNotificationMetadata() {
+        val activity = currentActivity ?: return
+        val metadata = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, activity.name)
+            // *** THE FIX IS HERE ***
+            // Set the subtitle to the formatted time of the current session.
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, formatTime(_timeElapsed.value))
+            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, createColoredBitmap(activity.color))
+            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (activity.targetDurationSeconds * 1000).toLong())
+            .build()
+        mediaSession.setMetadata(metadata)
+
+        // We also need to rebuild the notification itself to see this change immediately
+        notificationManager.notify(NOTIFICATION_ID, createNotification())
     }
 
     private fun stopAndSaveTimer() {
         if (activeActivityId.value == null) return
         val idToSave = activeActivityId.value!!
         val timeToSave = _timeElapsed.value
-        serviceScope.launch {
-            db.activityDao().insertTimeLog(
-                TimeLogEntry(
-                    activityId = idToSave,
-                    startTime = startTime,
-                    durationInSeconds = timeToSave
+        if (timeToSave > 0) {
+            serviceScope.launch {
+                db.activityDao().insertTimeLog(
+                    TimeLogEntry(activityId = idToSave, startTime = startTimeMillis, durationInSeconds = timeToSave)
                 )
-            )
+            }
         }
         resetStateAndStopService()
     }
 
     private fun cancelTimer() {
-        // No log is saved
         resetStateAndStopService()
     }
 
     private fun resetStateAndStopService() {
         timerJob?.cancel()
+        mediaSession.isActive = false
         _activeActivityId.value = null
         _timeElapsed.value = 0
         _isPaused.value = false
         _activeActivityName.value = "Timer"
+        currentActivity = null
+        previouslyLoggedSeconds = 0
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        timerJob?.cancel()
-        mediaSession.release()
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-
     private fun createNotification(): Notification {
-        // Cancel Action
-        val cancelIntent = Intent(this, TimerService::class.java).apply { action = ACTION_CANCEL }
-        val pCancel = PendingIntent.getService(this, 1, cancelIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        // Pause/Resume Action
-        val pPauseResume: PendingIntent
-        val pauseResumeIcon: Int
-        val pauseResumeTitle: String
-        if (_isPaused.value) {
-            val resumeIntent = Intent(this, TimerService::class.java).apply { action = ACTION_RESUME }
-            pPauseResume = PendingIntent.getService(this, 2, resumeIntent, PendingIntent.FLAG_IMMUTABLE)
-            pauseResumeIcon = android.R.drawable.ic_media_play
-            pauseResumeTitle = "Resume"
+        val pCancel = PendingIntent.getService(this, 1, Intent(this, TimerService::class.java).apply { action = ACTION_CANCEL }, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val pPauseResume = if (_isPaused.value) {
+            PendingIntent.getService(this, 2, Intent(this, TimerService::class.java).apply { action = ACTION_RESUME }, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         } else {
-            val pauseIntent = Intent(this, TimerService::class.java).apply { action = ACTION_PAUSE }
-            pPauseResume = PendingIntent.getService(this, 2, pauseIntent, PendingIntent.FLAG_IMMUTABLE)
-            pauseResumeIcon = android.R.drawable.ic_media_pause
-            pauseResumeTitle = "Pause"
+            PendingIntent.getService(this, 2, Intent(this, TimerService::class.java).apply { action = ACTION_PAUSE }, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }
+        val pStop = PendingIntent.getService(this, 3, Intent(this, TimerService::class.java).apply { action = ACTION_STOP }, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
-        // Stop Action
-        val stopIntent = Intent(this, TimerService::class.java).apply { action = ACTION_STOP }
-        val pStop = PendingIntent.getService(this, 3, stopIntent, PendingIntent.FLAG_IMMUTABLE)
+        val pauseResumeIcon = if (_isPaused.value) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
+        val pauseResumeTitle = if (_isPaused.value) "Resume" else "Pause"
 
+        // The builder now doesn't need to set text, as the system pulls it from the metadata.
         val builder = NotificationCompat.Builder(this, "TIMER_SERVICE_CHANNEL")
-            .setContentTitle(_activeActivityName.value)
-            .setContentText(formatTime(_timeElapsed.value))
-            .setSmallIcon(R.drawable.ic_stat_timer) // A custom icon is better
+            .setStyle(
+                MediaNotificationCompat.MediaStyle()
+                    .setMediaSession(mediaSession.sessionToken)
+                    .setShowActionsInCompactView(0, 1, 2)
+            )
+            .setSmallIcon(R.drawable.ic_stat_timer)
+            .setLargeIcon(createColoredBitmap(currentActivity?.color))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cancel", pCancel)
             .addAction(pauseResumeIcon, pauseResumeTitle, pPauseResume)
             .addAction(android.R.drawable.ic_media_next, "Stop", pStop)
 
-        builder.setStyle(
-            MediaNotificationCompat.MediaStyle()
-                .setMediaSession(mediaSession.sessionToken)
-                .setShowActionsInCompactView(0, 1, 2) // Show all 3 actions
-        )
         return builder.build()
     }
 
-    private fun updateNotification() {
-        notificationManager.notify(NOTIFICATION_ID, createNotification())
+    private fun getPeriodTimestamps(period: String): Pair<Long, Long> {
+        val now = Calendar.getInstance()
+        val start = now.clone() as Calendar
+        start.set(Calendar.HOUR_OF_DAY, 0); start.set(Calendar.MINUTE, 0)
+        start.set(Calendar.SECOND, 0); start.set(Calendar.MILLISECOND, 0)
+        when (period) {
+            "Weekly" -> { start.firstDayOfWeek = Calendar.MONDAY; start.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY) }
+            "Monthly" -> { start.set(Calendar.DAY_OF_MONTH, 1) }
+        }
+        return Pair(start.timeInMillis, now.timeInMillis)
     }
 
-    private fun formatTime(seconds: Int) =
-        String.format("%02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+    private fun createColoredBitmap(hexColor: String?): Bitmap {
+        val color = try { Color.parseColor(hexColor ?: "#808080") } catch (e: Exception) { Color.GRAY }
+        val bitmap = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(color)
+        return bitmap
+    }
+
+    private fun formatTime(seconds: Int) = String.format("%02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+    override fun onDestroy() { super.onDestroy(); timerJob?.cancel(); mediaSession.release() }
+    override fun onBind(intent: Intent?): IBinder? = null
 }
