@@ -1,5 +1,6 @@
-// ActivityAdapter.kt
+// app/src/main/java/com/example/roboticsgenius/ActivityAdapter.kt
 package com.example.roboticsgenius
+
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
@@ -13,65 +14,117 @@ import com.google.android.material.card.MaterialCardView
 
 class ActivityAdapter(
     private val onStartClick: (Activity) -> Unit,
-    private val onStopClick: () -> Unit
-) : ListAdapter<Activity, ActivityAdapter.ActivityViewHolder>(ActivityDiffCallback()) {
+    private val onStopClick: () -> Unit,
+    private val onPauseResumeClick: (isPaused: Boolean) -> Unit,
+    private val onCancelClick: () -> Unit
+) : ListAdapter<ActivityUiModel, ActivityAdapter.ActivityViewHolder>(ActivityUiModelDiffCallback()) {
 
+    // Real-time state from the TimerService
     private var activeId: Int? = null
     private var currentTime: Int = 0
+    private var isPaused: Boolean = false
 
-    fun setUiState(activeActivityId: Int?, time: Int) {
-        val needsUpdate = activeId != activeActivityId || (activeActivityId != null)
-        activeId = activeActivityId
-        currentTime = time
-        if (needsUpdate) notifyDataSetChanged()
+    fun setActiveTimerState(activeId: Int? = this.activeId, time: Int? = null, isPaused: Boolean? = null) {
+        val oldActiveId = this.activeId
+        val oldIsPaused = this.isPaused
+
+        this.activeId = activeId
+        time?.let { this.currentTime = it }
+        isPaused?.let { this.isPaused = it }
+
+        if (oldActiveId != this.activeId || oldIsPaused != this.isPaused) {
+            // A major state change occurred, redraw all visible items.
+            notifyDataSetChanged()
+        } else if (activeId != null && !this.isPaused) {
+            // Only the time changed, find the active view holder and update it efficiently.
+            val activePosition = currentList.indexOfFirst { it.activity.id == this.activeId }
+            if (activePosition != -1) {
+                notifyItemChanged(activePosition, PAYLOAD_TIME_UPDATE)
+            }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ActivityViewHolder {
         val binding = ItemActivityBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ActivityViewHolder(binding)
+        return ActivityViewHolder(binding, onStartClick, onStopClick, onPauseResumeClick, onCancelClick)
     }
 
     override fun onBindViewHolder(holder: ActivityViewHolder, position: Int) {
-        holder.bind(getItem(position), activeId, currentTime, onStartClick, onStopClick)
+        holder.bind(getItem(position), activeId, currentTime, isPaused)
     }
 
-    class ActivityViewHolder(private val binding: ItemActivityBinding) : RecyclerView.ViewHolder(binding.root) {
+    override fun onBindViewHolder(holder: ActivityViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.contains(PAYLOAD_TIME_UPDATE)) {
+            holder.updateTimer(currentTime)
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
+    class ActivityViewHolder(
+        private val binding: ItemActivityBinding,
+        private val onStartClick: (Activity) -> Unit,
+        private val onStopClick: () -> Unit,
+        private val onPauseResumeClick: (isPaused: Boolean) -> Unit,
+        private val onCancelClick: () -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun updateTimer(time: Int) {
+            binding.textViewRunningTimer.text = formatTime(time)
+        }
+
         fun bind(
-            activity: Activity,
+            uiModel: ActivityUiModel,
             activeId: Int?,
             currentTime: Int,
-            onStartClick: (Activity) -> Unit,
-            onStopClick: () -> Unit
+            isPaused: Boolean
         ) {
+            val activity = uiModel.activity
+
+            // --- Bind data from UiModel ---
             binding.textViewActivityName.text = activity.name
+            binding.textViewTargetStatus.text = uiModel.statusText
+            binding.textViewStreak.text = "🔥 ${uiModel.streakCount}"
+
             (binding.cardView as MaterialCardView).strokeColor = Color.parseColor(activity.color)
             (binding.textViewStreak.background as GradientDrawable).setColor(Color.parseColor(activity.color))
-            binding.textViewStreak.text = "🔥 0"
 
-            val isTimerRunning = activeId != null
-            val isThisCardActive = isTimerRunning && activeId == activity.id
+            // --- Dynamic State Binding based on TimerService ---
+            val isTimerRunningForAnyActivity = activeId != null
+            val isThisCardTheActiveOne = isTimerRunningForAnyActivity && activeId == activity.id
 
-            if (isTimerRunning) {
-                if (isThisCardActive) {
-                    binding.containerLayout.alpha = 1.0f
-                    binding.textViewTargetStatus.text = "Stopwatch is running..."
-                    binding.buttonAddLog.visibility = View.GONE
-                    binding.textViewRunningTimer.visibility = View.VISIBLE
-                    binding.textViewRunningTimer.text = formatTime(currentTime)
-                    binding.buttonStart.visibility = View.GONE
-                    binding.layoutRunningControls.visibility = View.VISIBLE
-                    binding.buttonStop.setOnClickListener { onStopClick() }
+            binding.containerLayout.alpha = if (isTimerRunningForAnyActivity && !isThisCardTheActiveOne) 0.5f else 1.0f
+            binding.buttonStart.isEnabled = !isTimerRunningForAnyActivity
+
+            if (isThisCardTheActiveOne) {
+                // --- THIS is the active card ---
+                if (isPaused) {
+                    binding.textViewTargetStatus.text = "Paused"
+                } // When running, the status text is replaced by the timer value below
+
+                binding.buttonAddLog.visibility = View.GONE
+                binding.textViewRunningTimer.visibility = View.VISIBLE
+                binding.textViewRunningTimer.text = formatTime(currentTime)
+                binding.buttonStart.visibility = View.GONE
+                binding.layoutRunningControls.visibility = View.VISIBLE
+
+                binding.buttonCancel.setOnClickListener { onCancelClick() }
+                binding.buttonStop.setOnClickListener { onStopClick() }
+                binding.buttonPause.setOnClickListener { onPauseResumeClick(isPaused) }
+
+                if (isPaused) {
+                    binding.buttonPause.setIconResource(android.R.drawable.ic_media_play)
+                    binding.buttonPause.contentDescription = itemView.context.getString(R.string.resume_timer)
                 } else {
-                    binding.containerLayout.alpha = 0.5f
-                    binding.buttonStart.isEnabled = false
+                    binding.buttonPause.setIconResource(android.R.drawable.ic_media_pause)
+                    binding.buttonPause.contentDescription = itemView.context.getString(R.string.pause_timer)
                 }
             } else {
-                binding.containerLayout.alpha = 1.0f
-                binding.textViewTargetStatus.text = "Target: ${formatTime(activity.targetDurationSeconds)}"
+                // --- This is an INACTIVE card ---
+                // statusText is already set from the uiModel above
                 binding.buttonAddLog.visibility = View.VISIBLE
                 binding.textViewRunningTimer.visibility = View.GONE
                 binding.buttonStart.visibility = View.VISIBLE
-                binding.buttonStart.isEnabled = true
                 binding.layoutRunningControls.visibility = View.GONE
                 binding.buttonStart.setOnClickListener { onStartClick(activity) }
             }
@@ -82,9 +135,16 @@ class ActivityAdapter(
             return String.format("%02d:%02d:%02d", h, m, s)
         }
     }
+
+    companion object {
+        const val PAYLOAD_TIME_UPDATE = "PAYLOAD_TIME_UPDATE"
+    }
 }
 
-class ActivityDiffCallback : DiffUtil.ItemCallback<Activity>() {
-    override fun areItemsTheSame(oldItem: Activity, newItem: Activity): Boolean = oldItem.id == newItem.id
-    override fun areContentsTheSame(oldItem: Activity, newItem: Activity): Boolean = oldItem == newItem
+class ActivityUiModelDiffCallback : DiffUtil.ItemCallback<ActivityUiModel>() {
+    override fun areItemsTheSame(oldItem: ActivityUiModel, newItem: ActivityUiModel): Boolean =
+        oldItem.activity.id == newItem.activity.id
+
+    override fun areContentsTheSame(oldItem: ActivityUiModel, newItem: ActivityUiModel): Boolean =
+        oldItem == newItem
 }

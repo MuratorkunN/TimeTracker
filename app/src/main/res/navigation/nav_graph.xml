@@ -5,11 +5,22 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/activitiesFragment">
 
-    <!-- This defines our first screen. It will be red for now. -->
     <fragment
         android:id="@+id/activitiesFragment"
         android:name="com.example.roboticsgenius.ActivitiesFragment"
         android:label="fragment_activities"
         tools:layout="@layout/fragment_activities" />
+
+    <fragment
+        android:id="@+id/insightsFragment"
+        android:name="com.example.roboticsgenius.InsightsFragment"
+        android:label="fragment_insights"
+        tools:layout="@layout/fragment_insights" />
+
+    <fragment
+        android:id="@+id/timelineFragment"
+        android:name="com.example.roboticsgenius.TimelineFragment"
+        android:label="fragment_timeline"
+        tools:layout="@layout/fragment_timeline" />
 
 </navigation>

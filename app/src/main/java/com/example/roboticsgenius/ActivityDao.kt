@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/roboticsgenius/ActivityDao.kt
 package com.example.roboticsgenius
 
 import androidx.room.Dao
@@ -7,16 +8,23 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ActivityDao {
+    // ... (insert, getAllActivities, getActivityById, insertTimeLog) ...
+
     @Insert
     suspend fun insert(activity: Activity)
 
     @Query("SELECT * FROM activities ORDER BY name ASC")
     fun getAllActivities(): Flow<List<Activity>>
 
+    @Query("SELECT * FROM activities WHERE id = :activityId")
+    suspend fun getActivityById(activityId: Int): Activity?
+
     @Insert
     suspend fun insertTimeLog(log: TimeLogEntry)
 
-    // This is the function for the HISTORY/TIMELINE screen. It was missing.
+    @Query("SELECT * FROM time_log_entries ORDER BY startTime DESC")
+    fun getAllTimeLogs(): Flow<List<TimeLogEntry>> // ADD THIS FUNCTION
+
     @Query("""
         SELECT a.name as activityName, t.durationInSeconds, t.startTime
         FROM time_log_entries t
@@ -25,7 +33,6 @@ interface ActivityDao {
     """)
     fun getAllLogsWithActivityNames(): Flow<List<TimeLogWithActivityName>>
 
-    // This is the function for the STREAK calculation. It was missing.
     @Query("SELECT * FROM time_log_entries WHERE activityId = :activityId ORDER BY startTime DESC")
     suspend fun getLogsForActivity(activityId: Int): List<TimeLogEntry>
 }
