@@ -60,6 +60,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/textViewTargetStatus">
 
+            <!-- Left icon‑only log button -->
             <FrameLayout
                 android:id="@+id/leftActionContainer"
                 android:layout_width="wrap_content"
@@ -70,10 +71,10 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonAddLog"
-                    style="?attr/materialButtonOutlinedStyle"
+                    style="?attr/materialIconButtonOutlinedStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Add Log"
+                    android:contentDescription="@string/add_log"
                     app:icon="@android:drawable/ic_menu_recent_history" />
 
                 <TextView
@@ -89,16 +90,19 @@
                     tools:text="00:01:26" />
             </FrameLayout>
 
+            <!-- Play icon‑only button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonStart"
                 style="?attr/materialIconButtonFilledTonalStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/start_timer"
                 app:icon="@android:drawable/ic_media_play"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <!-- Running controls: cancel, pause, stop -->
             <LinearLayout
                 android:id="@+id/layoutRunningControls"
                 android:layout_width="wrap_content"
@@ -114,6 +118,7 @@
                     style="?attr/materialIconButtonFilledTonalStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:contentDescription="@string/cancel_timer"
                     app:icon="@android:drawable/ic_menu_close_clear_cancel" />
 
                 <com.google.android.material.button.MaterialButton
@@ -122,14 +127,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="8dp"
+                    android:contentDescription="@string/pause_timer"
                     app:icon="@android:drawable/ic_media_pause" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonStop"
-                    style="?attr/materialButtonOutlinedStyle"
+                    style="?attr/materialIconButtonOutlinedStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:icon="@android:drawable/ic_media_next" />
+                    android:contentDescription="@string/stop_timer"
+                    app:icon="@android:drawable/ic_media_next"
+                    app:iconSize="24dp"
+                    app:strokeWidth="2dp" />
+
             </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
