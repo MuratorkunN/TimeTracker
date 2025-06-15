@@ -36,28 +36,21 @@
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="This Week" />
+                android:text="Weekly" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipMonth"
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="This Month" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip6Months"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="6 Months" />
+                android:text="Monthly" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipYear"
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="This Year" />
+                android:text="Yearly" />
         </com.google.android.material.chip.ChipGroup>
 
         <TextView

@@ -1,12 +1,13 @@
 package com.example.roboticsgenius
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -41,18 +42,17 @@ class InsightsFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiState.collect { state ->
-                binding.dateNavigator.isVisible = true // THE FIX: Arrows are ALWAYS visible.
                 binding.textViewDateRange.text = state.dateLabel
 
-                // THE "LABELS" FIX: Force the chart to show the full range of labels.
                 binding.lineChart.xAxis.apply {
                     labelCount = state.xAxisLabels.size
                     axisMinimum = 0f
                     axisMaximum = (state.xAxisLabels.size - 1).toFloat().coerceAtLeast(0f)
-                    valueFormatter = object : ValueFormatter() {
-                        override fun getFormattedValue(value: Float): String {
-                            return state.xAxisLabels.getOrNull(value.toInt()) ?: ""
-                        }
+
+                    valueFormatter = if (viewModel.filterState.value.timeRange == TimeRange.MONTH) {
+                        MonthlyAxisFormatter(state.xAxisLabels)
+                    } else {
+                        DefaultAxisFormatter(state.xAxisLabels)
                     }
                 }
 
@@ -75,7 +75,6 @@ class InsightsFragment : Fragment() {
             dialogBinding.chipGroupTimeRange.check(when (currentFilterState.timeRange) {
                 TimeRange.WEEK -> dialogBinding.chipWeek.id
                 TimeRange.MONTH -> dialogBinding.chipMonth.id
-                TimeRange.SIX_MONTHS -> dialogBinding.chip6Months.id
                 TimeRange.YEAR -> dialogBinding.chipYear.id
             })
 
@@ -83,6 +82,7 @@ class InsightsFragment : Fragment() {
                 dialogBinding.activityCheckboxContainer.addView(MaterialCheckBox(requireContext()).apply {
                     text = activity.name
                     isChecked = tempSelectedIds.contains(activity.id)
+                    buttonTintList = ColorStateList.valueOf(Color.parseColor(activity.color))
                     setOnCheckedChangeListener { _, isChecked ->
                         if (isChecked) tempSelectedIds.add(activity.id) else tempSelectedIds.remove(activity.id)
                     }
@@ -93,7 +93,6 @@ class InsightsFragment : Fragment() {
             dialogBinding.btnApply.setOnClickListener {
                 val newTimeRange = when (dialogBinding.chipGroupTimeRange.checkedChipId) {
                     dialogBinding.chipMonth.id -> TimeRange.MONTH
-                    dialogBinding.chip6Months.id -> TimeRange.SIX_MONTHS
                     dialogBinding.chipYear.id -> TimeRange.YEAR
                     else -> TimeRange.WEEK
                 }
@@ -123,6 +122,19 @@ class InsightsFragment : Fragment() {
             axisMinimum = 0f
             this.textColor = textColor
             setDrawGridLines(true)
+            spaceTop = 20f
+            valueFormatter = object : ValueFormatter() {
+                override fun getFormattedValue(value: Float): String {
+                    if (value < 1) return "0m"
+                    val hours = (value / 60).toInt()
+                    val minutes = (value % 60).toInt()
+                    return when {
+                        hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
+                        hours > 0 -> "${hours}h"
+                        else -> "${minutes}m"
+                    }
+                }
+            }
         }
         chart.axisRight.isEnabled = false
         chart.legend.textColor = textColor
@@ -131,5 +143,23 @@ class InsightsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    class DefaultAxisFormatter(private val labels: List<String>) : ValueFormatter() {
+        override fun getFormattedValue(value: Float): String {
+            return labels.getOrNull(value.toInt()) ?: ""
+        }
+    }
+
+    class MonthlyAxisFormatter(private val labels: List<String>) : ValueFormatter() {
+        override fun getFormattedValue(value: Float): String {
+            val label = labels.getOrNull(value.toInt()) ?: return ""
+            // THE FIX: Return the non-null label, or an empty string if it's not in the set.
+            return if (label in setOf("1", "8", "15", "22", "29")) {
+                label
+            } else {
+                ""
+            }
+        }
     }
 }
