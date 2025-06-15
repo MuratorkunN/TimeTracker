@@ -1,5 +1,8 @@
+// app/src/main/java/com/example/roboticsgenius/TimelineAdapter.kt
+
 package com.example.roboticsgenius
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -13,7 +16,9 @@ import java.util.*
 private const val VIEW_TYPE_HEADER = 0
 private const val VIEW_TYPE_LOG = 1
 
-class TimelineAdapter : ListAdapter<TimelineItem, RecyclerView.ViewHolder>(TimelineDiffCallback()) {
+class TimelineAdapter(
+    private val onLogLongClick: (logId: Int) -> Unit
+) : ListAdapter<TimelineItem, RecyclerView.ViewHolder>(TimelineDiffCallback()) {
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
@@ -26,7 +31,7 @@ class TimelineAdapter : ListAdapter<TimelineItem, RecyclerView.ViewHolder>(Timel
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             VIEW_TYPE_HEADER -> HeaderViewHolder(ItemTimelineHeaderBinding.inflate(inflater, parent, false))
-            VIEW_TYPE_LOG -> LogViewHolder(ItemTimelineLogBinding.inflate(inflater, parent, false))
+            VIEW_TYPE_LOG -> LogViewHolder(ItemTimelineLogBinding.inflate(inflater, parent, false), onLogLongClick)
             else -> throw IllegalArgumentException("Invalid view type")
         }
     }
@@ -45,14 +50,27 @@ class TimelineAdapter : ListAdapter<TimelineItem, RecyclerView.ViewHolder>(Timel
         }
     }
 
-    class LogViewHolder(private val binding: ItemTimelineLogBinding) : RecyclerView.ViewHolder(binding.root) {
+    class LogViewHolder(
+        private val binding: ItemTimelineLogBinding,
+        private val onLogLongClick: (logId: Int) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
         private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
         fun bind(logItem: TimelineItem.Log) {
             val log = logItem.logEntry
             binding.textViewLogActivityName.text = log.activityName
             binding.textViewLogDuration.text = formatDuration(log.durationInSeconds)
-            binding.textViewLogTime.text = timeFormat.format(Date(log.startTime))
+
+            // THE FIX: Set color indicator and new time range text
+            binding.colorIndicator.setBackgroundColor(Color.parseColor(log.activityColor))
+            val startTime = Date(log.startTime)
+            val endTime = Date(log.startTime + (log.durationInSeconds * 1000L))
+            binding.textViewLogTime.text = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+
+            itemView.setOnLongClickListener {
+                onLogLongClick(log.id)
+                true
+            }
         }
 
         private fun formatDuration(seconds: Int): String {
@@ -66,8 +84,11 @@ class TimelineAdapter : ListAdapter<TimelineItem, RecyclerView.ViewHolder>(Timel
 
 class TimelineDiffCallback : DiffUtil.ItemCallback<TimelineItem>() {
     override fun areItemsTheSame(oldItem: TimelineItem, newItem: TimelineItem): Boolean {
-        return (oldItem is TimelineItem.Header && newItem is TimelineItem.Header && oldItem.id == newItem.id) ||
-                (oldItem is TimelineItem.Log && newItem is TimelineItem.Log && oldItem.id == newItem.id)
+        return when {
+            oldItem is TimelineItem.Header && newItem is TimelineItem.Header -> oldItem.id == newItem.id
+            oldItem is TimelineItem.Log && newItem is TimelineItem.Log -> oldItem.logEntry.id == newItem.logEntry.id
+            else -> false
+        }
     }
 
     override fun areContentsTheSame(oldItem: TimelineItem, newItem: TimelineItem): Boolean {

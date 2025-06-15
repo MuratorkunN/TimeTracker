@@ -4,18 +4,29 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="16dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="16dp"
     android:paddingVertical="12dp">
+
+    <View
+        android:id="@+id/colorIndicator"
+        android:layout_width="4dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:background="@android:color/holo_purple" />
 
     <TextView
         android:id="@+id/textViewLogActivityName"
         style="@style/TextAppearance.Material3.BodyLarge"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
         android:layout_marginEnd="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/textViewLogDuration"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/colorIndicator"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Programming" />
 
@@ -39,6 +50,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textViewLogDuration"
-        tools:text="14:55" />
+        tools:text="14:55 - 16:25" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
