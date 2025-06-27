@@ -13,6 +13,15 @@ import java.util.concurrent.TimeUnit
 class ActivitiesViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val activityDao = db.activityDao()
+    private val dataSetDao = db.dataSetDao() // New DAO
+
+    // Flow for all data sets
+    val allDataSets: StateFlow<List<DataSet>> = dataSetDao.getAllDataSets()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     val activitiesUiModel: StateFlow<List<ActivityUiModel>> =
         activityDao.getAllActivities().combine(activityDao.getAllTimeLogs()) { activities, allLogs ->
@@ -48,13 +57,29 @@ class ActivitiesViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun updateActivity(activity: Activity) {
+    // This function will now handle both updates and inserts
+    fun upsertActivity(activity: Activity) {
         viewModelScope.launch {
-            activityDao.updateActivity(activity)
+            if (activity.id == 0) {
+                // This is a new activity, get max order index
+                val maxIndex = activityDao.getMaxOrderIndex() ?: -1
+                val newActivity = activity.copy(orderIndex = maxIndex + 1)
+                activityDao.insert(newActivity)
+            } else {
+                // This is an existing activity, just update it
+                activityDao.updateActivity(activity)
+            }
         }
     }
 
-    // NEW: Function to save a manually entered log
+    // New function to add a DataSet
+    fun addDataSet(dataSet: DataSet) {
+        viewModelScope.launch {
+            dataSetDao.insert(dataSet)
+        }
+    }
+
+
     fun addManualLog(activityId: Int, startTime: Long, durationInSeconds: Int) {
         viewModelScope.launch {
             val logEntry = TimeLogEntry(
@@ -68,7 +93,7 @@ class ActivitiesViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun generateStatusText(activity: Activity, logs: List<TimeLogEntry>, streak: Int): String {
         if (activity.targetDurationSeconds <= 0) {
-            return "No target set"
+            return "No target set. Tap to edit." // Modified for clarity
         }
         val (start, end) = getPeriodTimestamps(activity.targetPeriod)
         val durationInPeriod = logs.filter { it.startTime in start..end }.sumOf { it.durationInSeconds }

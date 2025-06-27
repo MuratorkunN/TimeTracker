@@ -14,6 +14,7 @@
         tools:context=".AddActivityFragment">
 
         <TextView
+            android:id="@+id/textViewTitle"
             style="@style/TextAppearance.Material3.HeadlineSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -30,29 +31,57 @@
                 android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
-            style="@style/TextAppearance.Material3.TitleMedium"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Color" />
-
-        <HorizontalScrollView
+        <LinearLayout
+            android:id="@+id/color_section_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:scrollbars="none">
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupColor"
-                android:layout_width="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="24dp"
+            android:paddingVertical="8dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                app:singleSelection="true" />
-        </HorizontalScrollView>
+                android:text="Color" />
+
+            <!-- Bigger circle -->
+            <View
+                android:id="@+id/viewColorPreview"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/circle_background"/>
+
+        </LinearLayout>
 
         <TextView
             style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
+            android:text="Data Set" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewDataSets"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:clipToPadding="false"
+            android:paddingVertical="8dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/item_data_set_choice"/>
+
+
+        <TextView
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
             android:text="Target Duration" />
 
         <HorizontalScrollView
@@ -101,7 +130,7 @@
             android:layout_weight="1" />
 
         <Button
-            android:id="@+id/btnCreateActivity"
+            android:id="@+id/btnSaveActivity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"

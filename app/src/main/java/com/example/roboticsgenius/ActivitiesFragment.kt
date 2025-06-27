@@ -9,7 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -26,7 +26,7 @@ class ActivitiesFragment : Fragment() {
     private var _binding: FragmentActivitiesBinding? = null
     private val binding get() = _binding!!
     private lateinit var activityAdapter: ActivityAdapter
-    private val viewModel: ActivitiesViewModel by viewModels()
+    private val viewModel: ActivitiesViewModel by activityViewModels()
     private lateinit var itemTouchHelper: ItemTouchHelper
     private var isDragging = false
 
@@ -39,7 +39,9 @@ class ActivitiesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
         setupDragAndDrop()
-        binding.fabAddActivity.setOnClickListener { AddActivityFragment().show(parentFragmentManager, "AddActivityDialog") }
+        binding.fabAddActivity.setOnClickListener {
+            AddActivityFragment.newInstance().show(parentFragmentManager, "AddActivityDialog")
+        }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -87,6 +89,8 @@ class ActivitiesFragment : Fragment() {
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) { isDragging = true }
             }
 
+
+
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
                 isDragging = false
@@ -116,11 +120,11 @@ class ActivitiesFragment : Fragment() {
             .show()
     }
 
-    private fun showEditTargetDialog(activityId: Int) {
-        EditTargetFragment.newInstance(activityId).show(parentFragmentManager, "EditTargetDialog")
+    // This now opens the unified Add/Edit fragment in edit mode
+    private fun showEditActivityDialog(activityId: Int) {
+        AddActivityFragment.newInstance(activityId).show(parentFragmentManager, "EditActivityDialog")
     }
 
-    // NEW: Function to show the add log dialog
     private fun showAddLogDialog(activityId: Int) {
         AddLogFragment.newInstance(activityId).show(parentFragmentManager, "AddLogDialog")
     }
@@ -134,8 +138,8 @@ class ActivitiesFragment : Fragment() {
                 sendServiceAction(action)
             },
             onCancelClick = { sendServiceAction(TimerService.ACTION_CANCEL) },
-            onEditTargetClick = { uiModel -> showEditTargetDialog(uiModel.activity.id) },
-            onAddLogClick = { uiModel -> showAddLogDialog(uiModel.activity.id) } // NEW
+            onEditTargetClick = { uiModel -> showEditActivityDialog(uiModel.activity.id) },
+            onAddLogClick = { uiModel -> showAddLogDialog(uiModel.activity.id) }
         )
         binding.recyclerViewActivities.adapter = activityAdapter
         binding.recyclerViewActivities.layoutManager = LinearLayoutManager(requireContext())

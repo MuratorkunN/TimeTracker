@@ -12,10 +12,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // This repository is needed for MPAndroidChart
+        // This repository is needed for MPAndroidChart AND the color picker
         maven { url = uri("https://jitpack.io") }
     }
 }
 
-rootProject.name = "RoboticsGenius"
+rootProject.name = "MyLog" // Changed this in a previous step, just confirming
 include(":app")

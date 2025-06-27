@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <View
+        android:id="@+id/color_preview"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/hex_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:text="#FFFFFF"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="R" android:textColor="#F44336"/>
+        <SeekBar android:id="@+id/seekbar_r" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:max="255" android:progress="255"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="G" android:textColor="#4CAF50"/>
+        <SeekBar android:id="@+id/seekbar_g" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:max="255" android:progress="255"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="B" android:textColor="#2196F3"/>
+        <SeekBar android:id="@+id/seekbar_b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:max="255" android:progress="255"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="V"/>
+        <SeekBar android:id="@+id/seekbar_v" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:max="255" android:progress="255"/>
+    </LinearLayout>
+
+</LinearLayout>
