@@ -23,11 +23,10 @@ class DataSetAdapter(
 
     private var selectedDataSetId: Int? = null
 
-    // THIS IS THE FIX: A new function to handle the selection change and force a redraw.
     fun updateSelection(newId: Int) {
         if (newId != selectedDataSetId) {
             selectedDataSetId = newId
-            notifyDataSetChanged() // This forces the RecyclerView to redraw all items immediately.
+            notifyDataSetChanged()
         }
     }
 
@@ -44,7 +43,6 @@ class DataSetAdapter(
 
     override fun onBindViewHolder(holder: DataSetViewHolder, position: Int) {
         when (val item = getItem(position)) {
-            // The click listener now also calls our new updateSelection function.
             is DataSetChoice.Item -> holder.bind(item.dataSet, item.dataSet.id == selectedDataSetId) {
                 onDataSetSelected(it)
                 updateSelection(it)
@@ -54,10 +52,16 @@ class DataSetAdapter(
     }
 
     class DataSetViewHolder(private val binding: ItemDataSetChoiceBinding) : RecyclerView.ViewHolder(binding.root) {
-        // The bind function now takes the click listener lambda directly.
         fun bind(dataSet: DataSet, isSelected: Boolean, onDataSetClicked: (Int) -> Unit) {
             binding.textViewName.text = dataSet.name
-            binding.imageViewIcon.setImageResource(android.R.drawable.ic_menu_agenda) // Placeholder
+
+            val resourceId = itemView.context.resources.getIdentifier(dataSet.iconName, "drawable", itemView.context.packageName)
+            if (resourceId != 0) {
+                binding.imageViewIcon.setImageResource(resourceId)
+            } else {
+                binding.imageViewIcon.setImageResource(android.R.drawable.ic_menu_agenda) // Fallback
+            }
+
             binding.cardDataSet.setCardBackgroundColor(Color.parseColor(dataSet.color))
 
             if (isSelected) {

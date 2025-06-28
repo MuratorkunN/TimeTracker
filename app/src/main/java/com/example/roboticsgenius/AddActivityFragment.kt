@@ -47,15 +47,13 @@ class AddActivityFragment : BottomSheetDialogFragment() {
         return binding.root
     }
 
-    // THIS METHOD IS NEW. IT FIXES THE HEIGHT.
     override fun onStart() {
         super.onStart()
-        // This ensures the bottom sheet is fully expanded, showing the button without scrolling.
         dialog?.let {
             val bottomSheet = it.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) as FrameLayout
             val behavior = BottomSheetBehavior.from(bottomSheet)
             behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            behavior.skipCollapsed = true // Prevents it from collapsing when dragged.
+            behavior.skipCollapsed = true
         }
     }
 

@@ -2,12 +2,16 @@
 
 package com.example.roboticsgenius
 
+import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import android.view.ViewGroup // <<< THIS IMPORT IS NOW CORRECT AND REQUIRED.
+import android.widget.BaseAdapter
+import android.widget.GridView
+import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -23,6 +27,14 @@ class AddDataSetFragment : DialogFragment() {
 
     private val viewModel: ActivitiesViewModel by activityViewModels()
     private var selectedColor: String = "#808080"
+    private var selectedIconName: String = "ic_academics"
+
+    private val iconList = listOf(
+        "ic_academics", "ic_health", "ic_book", "ic_code", "ic_computer",
+        "ic_phone", "ic_eye", "ic_square", "ic_triangle", "ic_circle",
+        "ic_math", "ic_flag", "ic_business", "ic_school", "ic_pen",
+        "ic_electric", "ic_robot", "ic_coffee", "ic_key"
+    )
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = DialogAddDataSetBinding.inflate(inflater, container, false)
@@ -32,6 +44,11 @@ class AddDataSetFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         updateColorPreview()
+        updateIconPreview()
+
+        binding.imageViewIcon.setOnClickListener {
+            showIconPickerDialog()
+        }
 
         binding.colorSectionContainer.setOnClickListener {
             showRgbColorPickerDialog(
@@ -56,10 +73,43 @@ class AddDataSetFragment : DialogFragment() {
             val newDataSet = DataSet(
                 name = name,
                 color = selectedColor,
-                iconName = "ic_default_dataset"
+                iconName = selectedIconName
             )
             viewModel.addDataSet(newDataSet)
             dismiss()
+        }
+    }
+
+    private fun getResourceIdForIconName(context: Context, iconName: String): Int {
+        val resourceId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+        return if (resourceId == 0) {
+            android.R.drawable.ic_menu_agenda
+        } else {
+            resourceId
+        }
+    }
+
+    private fun updateIconPreview() {
+        val resourceId = getResourceIdForIconName(requireContext(), selectedIconName)
+        binding.imageViewIcon.setImageResource(resourceId)
+    }
+
+    private fun showIconPickerDialog() {
+        val gridView = GridView(requireContext()).apply {
+            numColumns = 5
+            adapter = IconPickerAdapter(requireContext(), iconList)
+        }
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Select Icon")
+            .setView(gridView)
+            .setNegativeButton("Cancel", null)
+            .show()
+
+        gridView.setOnItemClickListener { _, _, position, _ ->
+            selectedIconName = iconList[position]
+            updateIconPreview()
+            dialog.dismiss()
         }
     }
 
@@ -78,7 +128,6 @@ class AddDataSetFragment : DialogFragment() {
         }
     }
 
-    // This is the new, self-contained color picker logic
     private fun showRgbColorPickerDialog(title: String, initialColor: String, onColorSelected: (String) -> Unit) {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_rgb_color_picker, null)
 
@@ -132,5 +181,33 @@ class AddDataSetFragment : DialogFragment() {
                 onColorSelected(String.format("#%06X", 0xFFFFFF and color))
             }
             .show()
+    }
+}
+
+class IconPickerAdapter(private val context: Context, private val iconNames: List<String>) : BaseAdapter() {
+
+    override fun getCount(): Int = iconNames.size
+    override fun getItem(position: Int): Any = iconNames[position]
+    override fun getItemId(position: Int): Long = position.toLong()
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val imageView = if (convertView == null) {
+            ImageView(context).apply {
+                // <<< I AM A FOOL. THE CLASS IS ViewGroup.LayoutParams, NOT GridView.LayoutParams. THIS IS THE FIX.
+                layoutParams = ViewGroup.LayoutParams(150, 150)
+                setPadding(24, 24, 24, 24)
+            }
+        } else {
+            convertView as ImageView
+        }
+
+        val resourceId = context.resources.getIdentifier(iconNames[position], "drawable", context.packageName)
+        if (resourceId != 0) {
+            imageView.setImageResource(resourceId)
+        } else {
+            imageView.setImageResource(android.R.drawable.ic_menu_help)
+        }
+
+        return imageView
     }
 }
