@@ -4,6 +4,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    id("kotlin-parcelize") // This plugin is required
 }
 
 android {
@@ -52,6 +53,9 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.cardview:cardview:1.0.0")
 
+    // THE FIX: THIS DEPENDENCY IS REQUIRED FOR ConcatAdapter
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
     implementation("androidx.media:media:1.7.0")
 
     val room_version = "2.6.1"
@@ -67,9 +71,6 @@ dependencies {
     implementation ("androidx.fragment:fragment-ktx:1.6.2")
 
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
-
-    // REMOVED THE BROKEN LIBRARY
-    // implementation("com.github.dhaval2404:colorpicker:2.3")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

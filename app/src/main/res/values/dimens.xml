@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="chip_stroke_width">1dp</dimen>
+
+    <!-- Dimensions for My Data Table -->
+    <dimen name="my_data_date_column_width">80dp</dimen>
+    <dimen name="my_data_header_row_height">60dp</dimen>
+    <dimen name="my_data_cell_width">120dp</dimen>
+    <dimen name="my_data_cell_height">60dp</dimen>
+    <dimen name="my_data_cell_padding">4dp</dimen>
 </resources>

@@ -61,7 +61,7 @@ class ActivitiesFragment : Fragment() {
     private fun setupDragAndDrop() {
         val simpleCallback = object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+            0 // Disable swipe
         ) {
             override fun onMove(
                 recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder
@@ -77,19 +77,13 @@ class ActivitiesFragment : Fragment() {
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    showDeleteConfirmation(activityAdapter.currentList[position].activity)
-                    activityAdapter.notifyItemChanged(position)
-                }
+                // This is now unreachable because swipe is disabled
             }
 
             override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
                 super.onSelectedChanged(viewHolder, actionState)
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) { isDragging = true }
             }
-
-
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
@@ -98,7 +92,7 @@ class ActivitiesFragment : Fragment() {
             }
 
             override fun isLongPressDragEnabled(): Boolean = TimerService.activeActivityId.value == null
-            override fun isItemViewSwipeEnabled(): Boolean = TimerService.activeActivityId.value == null
+            override fun isItemViewSwipeEnabled(): Boolean = false // Explicitly disable swipe
         }
         itemTouchHelper = ItemTouchHelper(simpleCallback)
         itemTouchHelper.attachToRecyclerView(binding.recyclerViewActivities)
@@ -120,7 +114,6 @@ class ActivitiesFragment : Fragment() {
             .show()
     }
 
-    // This now opens the unified Add/Edit fragment in edit mode
     private fun showEditActivityDialog(activityId: Int) {
         AddActivityFragment.newInstance(activityId).show(parentFragmentManager, "EditActivityDialog")
     }

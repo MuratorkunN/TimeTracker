@@ -6,25 +6,143 @@
     android:layout_height="match_parent"
     tools:context=".MyDataFragment">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/my_data_nav_host_fragment"
-        android:name="androidx.navigation.fragment.NavHostFragment"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:defaultNavHost="true"
+    <!-- Empty State Text View -->
+    <TextView
+        android:id="@+id/empty_state_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text='Add your first data set from "Add Data" section.'
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation_my_data"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:navGraph="@navigation/nav_graph_my_data" />
+        tools:visibility="visible" />
 
+    <!-- Loading Indicator -->
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_my_data"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+    <!-- Main Table Container -->
+    <FrameLayout
+        android:id="@+id/table_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_my_data"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
+
+        <!-- This is the outer frame for the DataSet color border -->
+        <FrameLayout
+            android:id="@+id/table_border"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="8dp"
+            android:background="@drawable/table_border_drawable"
+            android:padding="1dp">
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:columnCount="2"
+                android:rowCount="2">
+
+                <!-- 1. Top-Left: Fixed "Days" TextView -->
+                <TextView
+                    android:id="@+id/header_corner"
+                    android:layout_width="@dimen/my_data_date_column_width"
+                    android:layout_height="@dimen/my_data_header_row_height"
+                    android:layout_row="0"
+                    android:layout_column="0"
+                    android:background="#333333"
+                    android:gravity="center"
+                    android:text="Days"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                <!-- 2. Top-Right: Horizontal Scroll for Activity Headers -->
+                <HorizontalScrollView
+                    android:id="@+id/header_scroll_view"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/my_data_header_row_height"
+                    android:layout_row="0"
+                    android:layout_column="1"
+                    android:layout_gravity="fill_horizontal"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/header_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:background="#333333"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+
+                <!-- 3. Bottom-Left: Vertical Scroll for Date Column -->
+                <ScrollView
+                    android:id="@+id/date_column_scroll_view"
+                    android:layout_width="@dimen/my_data_date_column_width"
+                    android:layout_height="0dp"
+                    android:layout_row="1"
+                    android:layout_column="0"
+                    android:layout_gravity="fill_vertical"
+                    android:background="#333333"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/date_column_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </ScrollView>
+
+                <!-- 4. Bottom-Right: Main Data Grid -->
+                <HorizontalScrollView
+                    android:id="@+id/data_grid_horizontal_scroll"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_row="1"
+                    android:layout_column="1"
+                    android:layout_gravity="fill"
+                    android:scrollbars="none">
+
+                    <ScrollView
+                        android:id="@+id/data_grid_vertical_scroll"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/data_grid_container"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </ScrollView>
+                </HorizontalScrollView>
+            </GridLayout>
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Bottom Navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation_my_data"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/my_data_nav_menu" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

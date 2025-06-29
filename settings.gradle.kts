@@ -12,10 +12,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // This repository is needed for MPAndroidChart AND the color picker
+        // THIS REPOSITORY IS ESSENTIAL for the sticky library to be found
         maven { url = uri("https://jitpack.io") }
     }
 }
 
-rootProject.name = "MyLog" // Changed this in a previous step, just confirming
+rootProject.name = "MyLog"
 include(":app")
