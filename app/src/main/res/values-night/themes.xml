@@ -3,5 +3,9 @@
     <style name="Base.Theme.RoboticsGenius" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+
+        <!-- THE FIX: Set the app-wide font to Calibri -->
+        <item name="android:fontFamily">@font/calibri_regular</item>
+        <item name="fontFamily">@font/calibri_regular</item>
     </style>
 </resources>

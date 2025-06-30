@@ -27,7 +27,4 @@
         android:layout_height="wrap_content"
         android:maxHeight="400dp" />
 
-    <!-- THE BUTTONS HAVE BEEN COMPLETELY REMOVED FROM THIS XML.
-         THE DIALOG BUILDER IN THE KOTLIN FILE WILL CREATE THEM. -->
-
 </LinearLayout>

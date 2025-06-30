@@ -23,9 +23,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Date Range" />
+            android:text="Time Period" />
 
-        <!-- THE FIX: Wrap ChipGroup in a HorizontalScrollView -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -78,10 +77,17 @@
             android:visibility="gone"
             tools:visibility="visible">
 
-            <!-- THE FIX: Add "From" and "To" labels -->
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Custom Dates" />
+
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -131,31 +137,34 @@
             android:text="Reorder Columns"
             app:icon="@android:drawable/ic_menu_sort_by_size" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <Button
+            android:id="@+id/btnDownloadCsv"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp">
+            android:layout_marginTop="16dp"
+            android:text="Download .csv File" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="end"
+            android:orientation="horizontal">
 
             <Button
-                android:id="@+id/btnDownloadCsv"
+                android:id="@+id/btnCancel"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Download .csv"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:layout_marginEnd="8dp"
+                android:text="Cancel" />
 
             <Button
                 android:id="@+id/btnApply"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Apply"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
+                android:text="Apply" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

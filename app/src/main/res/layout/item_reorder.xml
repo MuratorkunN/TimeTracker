@@ -3,9 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/reorder_item_background"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingVertical="12dp">
+    android:layout_marginVertical="4dp"
+    android:paddingStart="4dp"
+    android:paddingEnd="16dp">
 
     <ImageView
         android:id="@+id/drag_handle"
@@ -13,7 +16,9 @@
         android:layout_height="48dp"
         android:padding="12dp"
         android:src="@android:drawable/ic_menu_sort_by_size"
-        android:contentDescription="Drag to reorder" />
+        android:contentDescription="Drag to reorder"
+        app:tint="?attr/colorControlNormal"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 
     <TextView
         android:id="@+id/activity_name_text"

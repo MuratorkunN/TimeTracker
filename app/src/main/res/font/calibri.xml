@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This file defines the font family named "calibri". -->
+<!-- The system knows THIS FILE as @font/calibri -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Regular Style -->
+    <!-- This now points to the ACTUAL FILE calibri_regular.ttf -->
+    <font
+        android:font="@font/calibri_regular"
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        app:font="@font/calibri_regular"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+
+    <!-- Italic Style -->
+    <!-- This now points to the ACTUAL FILE calibri_italic.ttf -->
+    <font
+        android:font="@font/calibri_italic"
+        android:fontStyle="italic"
+        android:fontWeight="400"
+        app:font="@font/calibri_italic"
+        app:fontStyle="italic"
+        app:fontWeight="400" />
+
+    <!-- Light Style -->
+    <!-- This now points to the ACTUAL FILE calibri_light.ttf -->
+    <font
+        android:font="@font/calibri_light"
+        android:fontStyle="normal"
+        android:fontWeight="300"
+        app:font="@font/calibri_light"
+        app:fontStyle="normal"
+        app:fontWeight="300" />
+
+    <!-- Light Italic Style -->
+    <!-- This now points to the ACTUAL FILE calibri_light_italic.ttf -->
+    <font
+        android:font="@font/calibri_light_italic"
+        android:fontStyle="italic"
+        android:fontWeight="300"
+        app:font="@font/calibri_light_italic"
+        app:fontStyle="italic"
+        app:fontWeight="300" />
+
+    <!-- Bold Style -->
+    <!-- This now points to the ACTUAL FILE calibri_bold.ttf -->
+    <font
+        android:font="@font/calibri_bold"
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        app:font="@font/calibri_bold"
+        app:fontStyle="normal"
+        app:fontWeight="700" />
+
+    <!-- Bold Italic Style -->
+    <!-- This now points to the ACTUAL FILE calibri_bold_italic.ttf -->
+    <font
+        android:font="@font/calibri_bold_italic"
+        android:fontStyle="italic"
+        android:fontWeight="700"
+        app:font="@font/calibri_bold_italic"
+        app:fontStyle="italic"
+        app:fontWeight="700" />
+
+</font-family>
