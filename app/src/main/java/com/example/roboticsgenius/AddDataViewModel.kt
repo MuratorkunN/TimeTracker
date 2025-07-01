@@ -6,10 +6,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -25,6 +29,16 @@ class AddDataViewModel(application: Application) : AndroidViewModel(application)
     val selectedDate = _selectedDate.asStateFlow()
 
     private val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+    // --- NEW: Flows to control navigation arrow state ---
+    val isPreviousEnabled: StateFlow<Boolean> = _selectedDate.map {
+        !isSameDay(it, GlobalSettings.getAppStartDate())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val isNextEnabled: StateFlow<Boolean> = _selectedDate.map {
+        !isSameDay(it, GlobalSettings.getToday())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    // --- END NEW ---
 
     val uiState: Flow<List<DataActivityUiModel>> = combine(
         _dataSetId,
@@ -108,5 +122,10 @@ class AddDataViewModel(application: Application) : AndroidViewModel(application)
             val newActivity = activity.copy(orderIndex = maxIndex + 1)
             activityDao.insert(newActivity)
         }
+    }
+
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 }

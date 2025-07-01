@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -34,7 +35,9 @@ data class MyDataUiState(
     val showDateNavigatorArrows: Boolean = true,
     val dateLabels: List<String> = emptyList(),
     val activities: List<Activity> = emptyList(),
-    val dataGrid: List<List<String>> = emptyList()
+    val dataGrid: List<List<String>> = emptyList(),
+    val isPreviousEnabled: Boolean = true,
+    val isNextEnabled: Boolean = true
 )
 
 class MyDataViewModel(application: Application) : AndroidViewModel(application) {
@@ -45,7 +48,7 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
 
     private val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val shortDisplayFormat = SimpleDateFormat("d MMM", Locale.US)
-    private val monthDisplayFormat = SimpleDateFormat("MMMM", Locale.US)
+    private val monthDisplayFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
     private val yearDisplayFormat = SimpleDateFormat("yyyy", Locale.US)
 
     private val _selectedDataSetId = MutableStateFlow<Int?>(null)
@@ -66,21 +69,19 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
             }
 
             val (startCal, endCal) = calculateDateRange(settings, viewDate)
+            val (isPrevEnabled, isNextEnabled) = checkNavigationAbility(settings, viewDate)
+
             val startDateStr = dbDateFormat.format(startCal.time)
             val endDateStr = dbDateFormat.format(endCal.time)
 
-            // THE FIX IS HERE: `allDataSets` is now a source flow within the combine block.
-            // This resolves all the type inference errors.
             combine(
-                allDataSets, // Flow 1: Provides the list of all datasets
-                activityDao.getAllActivitiesForDataSet(id), // Flow 2
-                dataEntryDao.getEntriesInDateRange(startDateStr, endDateStr), // Flow 3
-                activityDao.getAllTimeLogs() // Flow 4
+                allDataSets,
+                activityDao.getAllActivitiesForDataSet(id),
+                dataEntryDao.getEntriesInDateRange(startDateStr, endDateStr),
+                activityDao.getAllTimeLogs()
             ) { dataSetList, activities, dataEntries, timeLogs ->
-                // We find the selectedDataSet from the full list that Flow 1 provides.
                 val selectedDataSet = dataSetList.find { it.id == id }
-                // Then, we pass all the resolved data to the processing function.
-                processData(selectedDataSet, activities, dataEntries, timeLogs, startCal, endCal, settings)
+                processData(selectedDataSet, activities, dataEntries, timeLogs, startCal, endCal, settings, isPrevEnabled, isNextEnabled)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MyDataUiState(isLoading = true))
 
@@ -91,9 +92,15 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
         timeLogs: List<TimeLogEntry>,
         startCal: Calendar,
         endCal: Calendar,
-        settings: MyDataSettings
+        settings: MyDataSettings,
+        isPrevEnabled: Boolean,
+        isNextEnabled: Boolean
     ): MyDataUiState {
-        val datesInRange = getDatesBetween(startCal, endCal).asReversed()
+        val appStartDate = GlobalSettings.getAppStartDate()
+        val datesInRange = getDatesBetween(startCal, endCal)
+            .filter { !it.after(Calendar.getInstance()) }
+            .filter { !it.before(appStartDate) }
+            .asReversed()
         val dateLabels = datesInRange.map { date -> shortDisplayFormat.format(date.time) }
 
         val timeLogsByDateAndActivity = timeLogs
@@ -127,8 +134,38 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
             showDateNavigatorArrows = settings.timePeriod != MyDataTimePeriod.CUSTOM,
             dateLabels = dateLabels,
             activities = activities,
-            dataGrid = dataGrid
+            dataGrid = dataGrid,
+            isPreviousEnabled = isPrevEnabled,
+            isNextEnabled = isNextEnabled
         )
+    }
+
+    /**
+     * Prepares the currently displayed data for CSV export.
+     * This function uses the latest UI state to ensure the exported data
+     * perfectly matches what the user sees on screen.
+     * @return A [CsvExportData] object containing headers and rows, or null if no data is available.
+     */
+    suspend fun prepareDataForCsvExport(): CsvExportData? {
+        val currentState = uiState.first() // Get the current, fully processed state
+
+        if (currentState.isLoading || currentState.showEmptyState || currentState.activities.isEmpty()) {
+            return null
+        }
+
+        // The first header is always "Date"
+        val headers = mutableListOf("Date")
+        headers.addAll(currentState.activities.map { it.name })
+
+        // Map the existing grid data to the export format
+        val rows = currentState.dataGrid.mapIndexed { index, dataRow ->
+            val row = mutableListOf<String>()
+            row.add(currentState.dateLabels[index]) // Add the date label for the row
+            row.addAll(dataRow) // Add the rest of the data
+            row
+        }
+
+        return CsvExportData(headers, rows)
     }
 
     private fun calculateDateRange(settings: MyDataSettings, viewDate: Calendar): Pair<Calendar, Calendar> {
@@ -155,21 +192,45 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
                 endCal.timeInMillis = settings.customEndDate
             }
         }
+        val today = Calendar.getInstance()
+        if (endCal.after(today)) {
+            endCal.timeInMillis = today.timeInMillis
+        }
         return Pair(startCal, endCal)
     }
 
+    private fun checkNavigationAbility(settings: MyDataSettings, viewDate: Calendar): Pair<Boolean, Boolean> {
+        val appStartDate = GlobalSettings.getAppStartDate()
+        val today = GlobalSettings.getToday()
+        val increment = getDateIncrement(settings.timePeriod) ?: return Pair(false, false)
+
+        val prevDate = (viewDate.clone() as Calendar).apply { add(increment, -1) }
+        val (_, prevEndDate) = calculateDateRange(settings, prevDate)
+        val isPrevEnabled = !prevEndDate.before(appStartDate)
+
+        val nextDate = (viewDate.clone() as Calendar).apply { add(increment, 1) }
+        val (nextStartDate, _) = calculateDateRange(settings, nextDate)
+        val isNextEnabled = !nextStartDate.after(today)
+
+        return Pair(isPrevEnabled, isNextEnabled)
+    }
+
+    private fun getDateIncrement(period: MyDataTimePeriod): Int? {
+        return when (period) {
+            MyDataTimePeriod.WEEKLY -> Calendar.WEEK_OF_YEAR
+            MyDataTimePeriod.MONTHLY -> Calendar.MONTH
+            MyDataTimePeriod.YEARLY -> Calendar.YEAR
+            MyDataTimePeriod.CUSTOM -> null
+        }
+    }
+
     fun applySettings(newSettings: MyDataSettings) {
-        _viewDate.value = Calendar.getInstance() // Reset to today when settings change
+        _viewDate.value = Calendar.getInstance()
         _settings.value = newSettings
     }
 
     fun navigateDate(direction: Int) {
-        val increment = when (_settings.value.timePeriod) {
-            MyDataTimePeriod.WEEKLY -> Calendar.WEEK_OF_YEAR
-            MyDataTimePeriod.MONTHLY -> Calendar.MONTH
-            MyDataTimePeriod.YEARLY -> Calendar.YEAR
-            else -> return // Do not navigate for custom
-        }
+        val increment = getDateIncrement(_settings.value.timePeriod) ?: return
         _viewDate.value = (_viewDate.value.clone() as Calendar).apply {
             add(increment, direction)
         }

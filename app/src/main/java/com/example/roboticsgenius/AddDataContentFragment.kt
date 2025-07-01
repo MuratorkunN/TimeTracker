@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.roboticsgenius.databinding.FragmentAddDataContentBinding
+import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.MaterialDatePicker
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -67,6 +68,13 @@ class AddDataContentFragment : Fragment() {
         }
 
         lifecycleScope.launch {
+            viewModel.isPreviousEnabled.collect { binding.buttonPrev.isEnabled = it }
+        }
+        lifecycleScope.launch {
+            viewModel.isNextEnabled.collect { binding.buttonNext.isEnabled = it }
+        }
+
+        lifecycleScope.launch {
             viewModel.uiState.collect { uiModels ->
                 if (!isDragging) {
                     dataActivityAdapter.submitList(uiModels)
@@ -84,9 +92,16 @@ class AddDataContentFragment : Fragment() {
     }
 
     private fun showDatePicker() {
+        // NEW: Constrain the date picker with global start date and today.
+        val constraints = CalendarConstraints.Builder()
+            .setStart(GlobalSettings.getAppStartDate().timeInMillis)
+            .setEnd(MaterialDatePicker.todayInUtcMilliseconds())
+            .build()
+
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText("Select Date")
             .setSelection(viewModel.selectedDate.value.timeInMillis)
+            .setCalendarConstraints(constraints)
             .build()
 
         datePicker.addOnPositiveButtonClickListener { selection ->
@@ -143,7 +158,6 @@ class AddDataContentFragment : Fragment() {
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
                 isDragging = false
-                // THE FIX: This line now calls the ViewModel to save the new order.
                 viewModel.saveDataActivityOrder(dataActivityAdapter.currentList)
             }
         }

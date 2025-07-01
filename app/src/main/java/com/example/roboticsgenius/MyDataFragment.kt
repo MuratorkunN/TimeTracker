@@ -1,9 +1,13 @@
 // app/src/main/java/com/example/roboticsgenius/MyDataFragment.kt
 package com.example.roboticsgenius
 
+import android.content.ContentValues
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -36,6 +40,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -91,8 +96,12 @@ class MyDataFragment : Fragment() {
                         binding.progressBar.isVisible = state.isLoading
 
                         binding.textViewDateRange.text = state.dateNavigatorLabel
+
                         binding.buttonPrev.isVisible = state.showDateNavigatorArrows
                         binding.buttonNext.isVisible = state.showDateNavigatorArrows
+                        binding.buttonPrev.isEnabled = state.isPreviousEnabled
+                        binding.buttonNext.isEnabled = state.isNextEnabled
+
 
                         if (!state.isLoading && !state.showEmptyState) {
                             updateTable(state)
@@ -139,12 +148,14 @@ class MyDataFragment : Fragment() {
         var tempEndDate = Calendar.getInstance().apply { timeInMillis = currentSettings.customEndDate }
         val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
 
+        val appStartDate = GlobalSettings.getAppStartDate()
+        val today = MaterialDatePicker.todayInUtcMilliseconds()
+
         fun updateDateButtons() {
             settingsBinding.btnStartDate.text = dateFormat.format(tempStartDate.time)
             settingsBinding.btnEndDate.text = dateFormat.format(tempEndDate.time)
         }
 
-        // Pre-fill dialog with current settings
         updateDateButtons()
         settingsBinding.chipGroupDateRange.check(
             when (currentSettings.timePeriod) {
@@ -156,14 +167,14 @@ class MyDataFragment : Fragment() {
         )
         settingsBinding.customDateContainer.isVisible = currentSettings.timePeriod == MyDataTimePeriod.CUSTOM
 
-        // Listeners
         settingsBinding.chipGroupDateRange.setOnCheckedChangeListener { _, checkedId ->
             settingsBinding.customDateContainer.isVisible = checkedId == settingsBinding.chipCustom.id
         }
 
         settingsBinding.btnStartDate.setOnClickListener {
             val constraints = CalendarConstraints.Builder()
-                .setEnd(tempEndDate.timeInMillis) // Cannot be after the end date
+                .setStart(appStartDate.timeInMillis)
+                .setEnd(tempEndDate.timeInMillis)
                 .build()
 
             val picker = MaterialDatePicker.Builder.datePicker()
@@ -173,7 +184,6 @@ class MyDataFragment : Fragment() {
                 .build()
 
             picker.addOnPositiveButtonClickListener { selection ->
-                // Adjust for timezone to avoid off-by-one day issues
                 val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = selection }
                 tempStartDate.set(utcCal.get(Calendar.YEAR), utcCal.get(Calendar.MONTH), utcCal.get(Calendar.DAY_OF_MONTH))
                 updateDateButtons()
@@ -183,8 +193,8 @@ class MyDataFragment : Fragment() {
 
         settingsBinding.btnEndDate.setOnClickListener {
             val constraints = CalendarConstraints.Builder()
-                .setStart(tempStartDate.timeInMillis) // Cannot be before the start date
-                .setEnd(MaterialDatePicker.todayInUtcMilliseconds()) // Cannot be after today
+                .setStart(tempStartDate.timeInMillis)
+                .setEnd(today)
                 .build()
 
             val picker = MaterialDatePicker.Builder.datePicker()
@@ -204,12 +214,18 @@ class MyDataFragment : Fragment() {
         settingsBinding.btnReorder.setOnClickListener { showReorderDialog() }
 
         settingsBinding.btnDownloadCsv.setOnClickListener {
-            Toast.makeText(context, "CSV Download coming soon!", Toast.LENGTH_SHORT).show()
+            downloadCsv()
+            dialog.dismiss() // Dismiss the dialog immediately after starting the process
         }
 
         settingsBinding.btnCancel.setOnClickListener { dialog.dismiss() }
 
         settingsBinding.btnApply.setOnClickListener {
+            if (tempStartDate.after(tempEndDate)) {
+                Toast.makeText(context, "Start date cannot be after end date.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             val newPeriod = when (settingsBinding.chipGroupDateRange.checkedChipId) {
                 settingsBinding.chipWeekly.id -> MyDataTimePeriod.WEEKLY
                 settingsBinding.chipYearly.id -> MyDataTimePeriod.YEARLY
@@ -227,6 +243,79 @@ class MyDataFragment : Fragment() {
         }
 
         dialog.show()
+    }
+
+    private fun downloadCsv() {
+        lifecycleScope.launch {
+            val csvData = viewModel.prepareDataForCsvExport()
+            if (csvData == null) {
+                Toast.makeText(requireContext(), "No data available to export.", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            // Generate a safe filename by replacing invalid characters
+            val dataSetName = viewModel.uiState.value.selectedDataSet?.name ?: "Export"
+            val dateLabel = viewModel.uiState.value.dateNavigatorLabel
+            val fileName = "MyLog_${dataSetName}_${dateLabel}.csv".replace(Regex("[^a-zA-Z0-9.-]"), "_")
+
+            try {
+                val csvContent = generateCsvContent(csvData)
+                saveCsvToFile(fileName, csvContent)
+                Toast.makeText(requireContext(), "CSV saved to Downloads folder.", Toast.LENGTH_LONG).show()
+            } catch (e: IOException) {
+                Toast.makeText(requireContext(), "Error saving CSV file.", Toast.LENGTH_LONG).show()
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun generateCsvContent(data: CsvExportData): String {
+        val stringBuilder = StringBuilder()
+        // Append header row
+        stringBuilder.append(data.headers.toCsvRow()).append("\n")
+        // Append data rows
+        data.rows.forEach { row ->
+            stringBuilder.append(row.toCsvRow()).append("\n")
+        }
+        return stringBuilder.toString()
+    }
+
+    // Extension function to properly format a list of strings into a CSV row
+    private fun List<String>.toCsvRow(): String {
+        return this.joinToString(",") { item ->
+            // If an item contains a comma, newline, or double quote, we need to handle it:
+            // 1. Enclose the entire item in double quotes.
+            // 2. Double up any existing double quotes within the item.
+            if (item.contains(",") || item.contains("\n") || item.contains("\"")) {
+                "\"${item.replace("\"", "\"\"")}\""
+            } else {
+                item
+            }
+        }
+    }
+
+    private fun saveCsvToFile(fileName: String, content: String) {
+        val resolver = requireContext().contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "text/csv")
+            // Put the file in the public Downloads directory
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+        }
+
+        // Use MediaStore to get a URI for the new file.
+        // This works on all modern API levels and doesn't require extra permissions for the Downloads folder.
+        val uri = resolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+
+        if (uri != null) {
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                outputStream.write(content.toByteArray())
+            }
+        } else {
+            throw IOException("Failed to create new MediaStore entry for $fileName")
+        }
     }
 
     private fun showReorderDialog() {
