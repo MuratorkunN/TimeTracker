@@ -13,6 +13,16 @@
             android:id="@+id/myDataFragment"
             android:icon="@drawable/ic_nav_my_data"
             android:title="My Data" />
+        <!-- NEW ITEM: Reminders -->
+        <item
+            android:id="@+id/remindersFragment"
+            android:icon="@drawable/ic_nav_reminder"
+            android:title="Reminders" />
+        <!-- NEW ITEM: Notes -->
+        <item
+            android:id="@+id/notesFragment"
+            android:icon="@drawable/ic_book"
+            android:title="Notes" />
         <item
             android:id="@+id/settingsFragment"
             android:icon="@drawable/ic_nav_settings"

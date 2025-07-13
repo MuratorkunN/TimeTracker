@@ -77,10 +77,9 @@ class AddLogFragment : DialogFragment() {
     }
 
     private fun showDatePicker() {
-        // THE FIX: Use setStart() and setEnd() to define the valid range.
+        // THE FIX: Use setEnd() to disable future dates. This is the correct method.
         val constraintsBuilder = CalendarConstraints.Builder()
-            .setStart(GlobalSettings.getAppStartDate().timeInMillis) // Can't be before app start
-            .setEnd(MaterialDatePicker.todayInUtcMilliseconds()) // Can't be after today
+            .setEnd(MaterialDatePicker.todayInUtcMilliseconds())
 
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText("Select End Date")

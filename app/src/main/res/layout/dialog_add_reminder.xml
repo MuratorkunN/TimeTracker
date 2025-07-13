@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/textViewTitle"
+            style="@style/TextAppearance.Material3.HeadlineSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="Create New Reminder" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Reminder Text">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextReminderMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Time and Date" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPickDate"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                tools:text="July 14, 2025" />
+
+            <NumberPicker
+                android:id="@+id/pickerHour"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=":"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:layout_marginHorizontal="4dp" />
+
+            <NumberPicker
+                android:id="@+id/pickerMinute"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+
+        <TextView
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Repeat" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupDays"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:chipSpacingHorizontal="4dp">
+
+            <com.google.android.material.chip.Chip style="@style/Widget.Material3.Chip.Filter" android:id="@+id/chipSun" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="S" />
+            <com.google.android.material.chip.Chip style="@style/Widget.Material3.Chip.Filter" android:id="@+id/chipMon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="M" />
+            <com.google.android.material.chip.Chip style="@style/Widget.Material3.Chip.Filter" android:id="@+id/chipTue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="T" />
+            <com.google.android.material.chip.Chip style="@style/Widget.Material3.Chip.Filter" android:id="@+id/chipWed" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="W" />
+            <com.google.android.material.chip.Chip style="@style/Widget.Material3.Chip.Filter" android:id="@+id/chipThu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="T" />
+            <com.google.android.material.chip.Chip style="@style/Widget.Material3.Chip.Filter" android:id="@+id/chipFri" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="F" />
+            <com.google.android.material.chip.Chip style="@style/Widget.Material3.Chip.Filter" android:id="@+id/chipSat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="S" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+        <LinearLayout
+            android:id="@+id/color_section_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal"
+            android:paddingVertical="8dp">
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Color" />
+
+            <View
+                android:id="@+id/viewColorPreview"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/circle_background" />
+
+        </LinearLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp">
+
+            <Button
+                android:id="@+id/btnDelete"
+                style="@style/Widget.Material3.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete"
+                android:textColor="@android:color/holo_red_light"
+                android:visibility="gone"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconTint="@android:color/holo_red_light"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:visibility="visible" />
+
+            <Button
+                android:id="@+id/btnCancel"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btnSave"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+</ScrollView>

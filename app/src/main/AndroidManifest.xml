@@ -2,9 +2,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permission to show notifications (required for API 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Permissions for scheduling exact alarms -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- Permission to re-schedule alarms after device reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- THE FIX: Permission for the TimerService to run in the foreground -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- THE FIX: Required for foreground services on Android 14+ with targetSdk 34 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
 
     <application
         android:name=".RoboticsGeniusApp"
@@ -16,7 +28,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RoboticsGenius"
-        tools:targetApi="31">
+        tools:targetApi="34">
 
         <activity
             android:name=".MainActivity"
@@ -30,7 +42,27 @@
         <service
             android:name=".TimerService"
             android:enabled="true"
-            android:foregroundServiceType="dataSync" />
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            />
+
+        <!-- Receiver for handling triggered alarms -->
+        <receiver
+            android:name=".ReminderBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Receiver for re-scheduling alarms on boot -->
+        <receiver
+            android:name=".BootReceiver"
+            android:enabled="true"
+            android:exported="true"> <!-- Needs to be exported to receive system broadcasts -->
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- THE FIX: Add action for app updates -->
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

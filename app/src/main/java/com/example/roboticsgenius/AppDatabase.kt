@@ -6,13 +6,13 @@ import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-// Bumping the version number to 7
-@Database(entities = [Activity::class, TimeLogEntry::class, DataSet::class, DataEntry::class], version = 7, exportSchema = false)
-// @TypeConverters(Converters::class) // <-- THIS LINE WAS THE ERROR. I HAVE REMOVED IT.
+// Bumping the version number to 8 for the new reminders table
+@Database(entities = [Activity::class, TimeLogEntry::class, DataSet::class, DataEntry::class, Reminder::class], version = 8, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun activityDao(): ActivityDao
     abstract fun dataSetDao(): DataSetDao
     abstract fun dataEntryDao(): DataEntryDao
+    abstract fun reminderDao(): ReminderDao // New DAO for Reminders
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
@@ -73,13 +73,29 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // New migration to add the reminders table
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `reminders` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `message` TEXT NOT NULL,
+                        `nextTriggerTime` INTEGER NOT NULL,
+                        `repeatDays` INTEGER NOT NULL,
+                        `color` TEXT NOT NULL,
+                        `isEnabled` INTEGER NOT NULL DEFAULT 1
+                    )
+                """)
+            }
+        }
+
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "activity_database")
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8) // Add new migration
                     .build().also { INSTANCE = it }
             }
         }
     }
 }
-// THE EMPTY CONVERTERS CLASS IS ALSO REMOVED.

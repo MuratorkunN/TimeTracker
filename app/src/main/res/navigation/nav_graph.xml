@@ -23,6 +23,20 @@
         android:label="My Data"
         tools:layout="@layout/fragment_my_data" />
 
+    <!-- NEW FRAGMENT DESTINATION: Reminders -->
+    <fragment
+        android:id="@+id/remindersFragment"
+        android:name="com.example.roboticsgenius.RemindersFragment"
+        android:label="Reminders"
+        tools:layout="@layout/fragment_reminders" />
+
+    <!-- NEW FRAGMENT DESTINATION: Notes -->
+    <fragment
+        android:id="@+id/notesFragment"
+        android:name="com.example.roboticsgenius.NotesFragment"
+        android:label="Notes"
+        tools:layout="@layout/fragment_placeholder" />
+
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.example.roboticsgenius.SettingsFragment"

@@ -52,6 +52,7 @@
         android:layout_marginTop="16dp"
         android:text="End Time" />
 
+    <!-- THIS IS THE FIX: A LinearLayout to manage the buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

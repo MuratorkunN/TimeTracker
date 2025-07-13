@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.timeTrackerRootFragment,
                 R.id.addDataFragment,
                 R.id.myDataFragment,
+                R.id.remindersFragment,
                 R.id.settingsFragment
             ),
             binding.drawerLayout
