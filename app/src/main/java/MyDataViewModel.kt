@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/roboticsgenius/MyDataViewModel.kt
 package com.example.roboticsgenius
 
 import android.app.Application
@@ -96,7 +95,7 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
         isPrevEnabled: Boolean,
         isNextEnabled: Boolean
     ): MyDataUiState {
-        val appStartDate = GlobalSettings.getAppStartDate()
+        val appStartDate = SettingsManager.getAppStartDateCalendar()
         val datesInRange = getDatesBetween(startCal, endCal)
             .filter { !it.after(Calendar.getInstance()) }
             .filter { !it.before(appStartDate) }
@@ -140,28 +139,20 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
         )
     }
 
-    /**
-     * Prepares the currently displayed data for CSV export.
-     * This function uses the latest UI state to ensure the exported data
-     * perfectly matches what the user sees on screen.
-     * @return A [CsvExportData] object containing headers and rows, or null if no data is available.
-     */
     suspend fun prepareDataForCsvExport(): CsvExportData? {
-        val currentState = uiState.first() // Get the current, fully processed state
+        val currentState = uiState.first()
 
         if (currentState.isLoading || currentState.showEmptyState || currentState.activities.isEmpty()) {
             return null
         }
 
-        // The first header is always "Date"
         val headers = mutableListOf("Date")
         headers.addAll(currentState.activities.map { it.name })
 
-        // Map the existing grid data to the export format
         val rows = currentState.dataGrid.mapIndexed { index, dataRow ->
             val row = mutableListOf<String>()
-            row.add(currentState.dateLabels[index]) // Add the date label for the row
-            row.addAll(dataRow) // Add the rest of the data
+            row.add(currentState.dateLabels[index])
+            row.addAll(dataRow)
             row
         }
 
@@ -200,8 +191,13 @@ class MyDataViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun checkNavigationAbility(settings: MyDataSettings, viewDate: Calendar): Pair<Boolean, Boolean> {
-        val appStartDate = GlobalSettings.getAppStartDate()
-        val today = GlobalSettings.getToday()
+        val appStartDate = SettingsManager.getAppStartDateCalendar()
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
         val increment = getDateIncrement(settings.timePeriod) ?: return Pair(false, false)
 
         val prevDate = (viewDate.clone() as Calendar).apply { add(increment, -1) }

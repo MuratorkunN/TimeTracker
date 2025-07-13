@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/roboticsgenius/AddDataContentFragment.kt
 package com.example.roboticsgenius
 
 import android.os.Bundle
@@ -92,9 +91,8 @@ class AddDataContentFragment : Fragment() {
     }
 
     private fun showDatePicker() {
-        // NEW: Constrain the date picker with global start date and today.
         val constraints = CalendarConstraints.Builder()
-            .setStart(GlobalSettings.getAppStartDate().timeInMillis)
+            .setStart(SettingsManager.getAppStartDateCalendar().timeInMillis)
             .setEnd(MaterialDatePicker.todayInUtcMilliseconds())
             .build()
 

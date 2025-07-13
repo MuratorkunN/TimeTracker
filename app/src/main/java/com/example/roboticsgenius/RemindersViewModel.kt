@@ -37,21 +37,24 @@ class RemindersViewModel(application: Application) : AndroidViewModel(applicatio
                         set(Calendar.MILLISECOND, 0)
                     }.timeInMillis
 
-                    reminderStartOfDay >= startOfToday
+                    // Show non-repeating reminders if their trigger time is valid (not 0)
+                    // and their day is today or in the future.
+                    it.nextTriggerTime > 0 && reminderStartOfDay >= startOfToday
                 }
             }
         }
         .stateIn(
             scope = viewModelScope,
-            // THE FIX: Corrected typo from WhileSubributed to WhileSubscribed
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
     fun upsertReminder(reminder: Reminder) {
         viewModelScope.launch {
-            val reminderId = reminderDao.upsert(reminder)
-            val finalReminder = if (reminder.id == 0) reminder.copy(id = reminderId.toInt()) else reminder
+            // THE FIX: Ensure we get the ID back from the upsert before scheduling
+            val newId = reminderDao.upsert(reminder)
+            // If it was a new reminder, its ID was 0. Use the newId returned from the DB.
+            val finalReminder = if (reminder.id == 0) reminder.copy(id = newId.toInt()) else reminder
             ReminderManager.scheduleOrUpdateReminder(getApplication(), finalReminder)
         }
     }

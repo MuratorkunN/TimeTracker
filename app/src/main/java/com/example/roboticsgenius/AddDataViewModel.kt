@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/roboticsgenius/AddDataViewModel.kt
 package com.example.roboticsgenius
 
 import android.app.Application
@@ -30,15 +29,19 @@ class AddDataViewModel(application: Application) : AndroidViewModel(application)
 
     private val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
-    // --- NEW: Flows to control navigation arrow state ---
     val isPreviousEnabled: StateFlow<Boolean> = _selectedDate.map {
-        !isSameDay(it, GlobalSettings.getAppStartDate())
+        !isSameDay(it, SettingsManager.getAppStartDateCalendar())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val isNextEnabled: StateFlow<Boolean> = _selectedDate.map {
-        !isSameDay(it, GlobalSettings.getToday())
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        !isSameDay(it, today)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-    // --- END NEW ---
 
     val uiState: Flow<List<DataActivityUiModel>> = combine(
         _dataSetId,
@@ -90,7 +93,6 @@ class AddDataViewModel(application: Application) : AndroidViewModel(application)
         )
     }
 
-    // NEW: This function saves the new order of the data activities.
     fun saveDataActivityOrder(reorderedActivities: List<DataActivityUiModel>) {
         viewModelScope.launch {
             val updatedActivities = reorderedActivities.mapIndexed { index, uiModel ->

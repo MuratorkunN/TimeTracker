@@ -29,12 +29,14 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
 
         // Set up AppBarConfiguration with the DrawerLayout
+        // THE FIX: Add notesFragment to the set of top-level destinations
         appBarConfiguration = AppBarConfiguration(
             setOf(
                 R.id.timeTrackerRootFragment,
                 R.id.addDataFragment,
                 R.id.myDataFragment,
                 R.id.remindersFragment,
+                R.id.notesFragment, // <-- ADDED THIS LINE
                 R.id.settingsFragment
             ),
             binding.drawerLayout

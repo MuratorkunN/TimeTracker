@@ -5,6 +5,8 @@ plugins {
     id("com.android.application") version "8.2.2" apply false
     id("org.jetbrains.kotlin.android") version "1.9.22" apply false
     id("com.google.devtools.ksp") version "1.9.22-1.0.17" apply false
+    // THE FIX: Define the Safe Args plugin here at the top level with its version
+    id("androidx.navigation.safeargs.kotlin") version "2.7.7" apply false
 }
 
 // NOTE: The allprojects{} and buildscript{} blocks have been completely removed.

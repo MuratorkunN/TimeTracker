@@ -101,6 +101,7 @@ object StreakCalculator {
                 newCal.set(Calendar.MILLISECOND, 0)
             }
             Calendar.WEEK_OF_YEAR -> {
+                newCal.firstDayOfWeek = Calendar.MONDAY
                 newCal.set(Calendar.DAY_OF_WEEK, newCal.firstDayOfWeek)
                 return getStartOf(newCal, Calendar.DAY_OF_YEAR) // chain to reset time
             }

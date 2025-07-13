@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="8dp"
+    app:strokeWidth="2dp"
+    tools:strokeColor="#BA55D3">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <com.example.roboticsgenius.StrokedTextView
+            android:id="@+id/textViewNoteTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textColor="@android:color/white"
+            tools:text="*Note Title*:" />
+
+        <TextView
+            android:id="@+id/textViewNoteContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="4"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:alpha="0.8"
+            tools:text="note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note11note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1note1" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

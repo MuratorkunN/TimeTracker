@@ -1,5 +1,3 @@
-// app/src/main/java/com/example/roboticsgenius/InsightsViewModel.kt
-
 package com.example.roboticsgenius
 
 import android.app.Application
@@ -148,7 +146,6 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
                 endDate.add(Calendar.MONTH, 1)
                 endDate.add(Calendar.DAY_OF_YEAR, -1)
                 labelFormat = SimpleDateFormat("d", Locale.getDefault())
-                // THE FIX: Increment day by day to get 30 data points
                 incrementField = Calendar.DAY_OF_YEAR
             }
             TimeRange.YEAR -> {

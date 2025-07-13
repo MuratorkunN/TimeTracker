@@ -1,18 +1,17 @@
-// app/src/main/java/com/example/roboticsgenius/AppDatabase.kt
-
 package com.example.roboticsgenius
 import android.content.Context
 import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-// Bumping the version number to 8 for the new reminders table
-@Database(entities = [Activity::class, TimeLogEntry::class, DataSet::class, DataEntry::class, Reminder::class], version = 8, exportSchema = false)
+// Bumping the version number to 9 for the new notes table
+@Database(entities = [Activity::class, TimeLogEntry::class, DataSet::class, DataEntry::class, Reminder::class, Note::class], version = 9, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun activityDao(): ActivityDao
     abstract fun dataSetDao(): DataSetDao
     abstract fun dataEntryDao(): DataEntryDao
-    abstract fun reminderDao(): ReminderDao // New DAO for Reminders
+    abstract fun reminderDao(): ReminderDao
+    abstract fun noteDao(): NoteDao // New DAO for Notes
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
@@ -73,7 +72,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        // New migration to add the reminders table
         val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -89,11 +87,25 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // New migration to add the notes table
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `notes` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `content` TEXT NOT NULL,
+                        `color` TEXT NOT NULL,
+                        `lastModified` INTEGER NOT NULL
+                    )
+                """)
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "activity_database")
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8) // Add new migration
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9) // Add new migration
                     .build().also { INSTANCE = it }
             }
         }

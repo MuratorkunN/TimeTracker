@@ -4,7 +4,9 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
-    id("kotlin-parcelize") // This plugin is required
+    id("kotlin-parcelize")
+    // THE FIX: Apply the Safe Args plugin (without the version)
+    id("androidx.navigation.safeargs.kotlin")
 }
 
 android {

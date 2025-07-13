@@ -35,13 +35,22 @@ class RemindersAdapter(
 
         private val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
         private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-        private val dayLabels = listOf("S", "M", "T", "W", "T", "F", "S")
+        // Visual order starts with Monday
+        private val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
+        // Bitmask mapping for Monday-first visual order
+        private val dayBitMapping = listOf(
+            1 shl 1, // Monday
+            1 shl 2, // Tuesday
+            1 shl 3, // Wednesday
+            1 shl 4, // Thursday
+            1 shl 5, // Friday
+            1 shl 6, // Saturday
+            1 shl 0  // Sunday
+        )
 
         fun bind(reminder: Reminder) {
             binding.textViewReminderMessage.text = reminder.message
-            // THE FIX: Correctly cast to MaterialCardView to set the stroke color
             (binding.cardView).strokeColor = Color.parseColor(reminder.color)
-
 
             val calendar = Calendar.getInstance().apply { timeInMillis = reminder.nextTriggerTime }
             binding.textViewNextDate.text = dateFormat.format(calendar.time)
@@ -49,9 +58,9 @@ class RemindersAdapter(
 
             binding.daysContainer.removeAllViews()
             if (reminder.repeatDays > 0) {
-                // Display repeating days
+                // Use the new Monday-first mapping
                 for (i in 0..6) {
-                    val dayBit = 1 shl i // SUN=1, MON=2, TUE=4, etc.
+                    val dayBit = dayBitMapping[i]
                     val isDaySelected = (reminder.repeatDays and dayBit) != 0
                     val dayView = createDayView(isDaySelected, dayLabels[i])
                     binding.daysContainer.addView(dayView)
@@ -59,7 +68,6 @@ class RemindersAdapter(
             } else {
                 val noRepeat = TextView(itemView.context).apply {
                     text = "Does not repeat"
-                    // THE FIX: Use the locally defined, reliable style
                     setTextAppearance(R.style.TextAppearance_App_BodySmall)
                     alpha = 0.7f
                 }
@@ -77,7 +85,6 @@ class RemindersAdapter(
                 gravity = Gravity.CENTER
                 minWidth = (24 * resources.displayMetrics.density).toInt()
                 minHeight = (24 * resources.displayMetrics.density).toInt()
-                // THE FIX: Use the locally defined, reliable style
                 setTextAppearance(R.style.TextAppearance_App_LabelSmall)
 
                 val layoutParams = ViewGroup.MarginLayoutParams(
