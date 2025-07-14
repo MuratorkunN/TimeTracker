@@ -19,7 +19,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val appStartDate: StateFlow<Calendar> = SettingsManager.appStartDate
 
     val deletionItems: StateFlow<List<DeletionItem>> =
-        combine(dataSetDao.getAllDataSets(), activityDao.getAllActivities()) { dataSets, allActivities ->
+        // THE FIX: Use the new DAO function to get all activities, not just TimeTracker ones.
+        combine(dataSetDao.getAllDataSets(), activityDao.getAllActivitiesForSettings()) { dataSets, allActivities ->
             val items = mutableListOf<DeletionItem>()
             dataSets.forEach { dataSet ->
                 items.add(DeletionItem.DataSetItem(dataSet))

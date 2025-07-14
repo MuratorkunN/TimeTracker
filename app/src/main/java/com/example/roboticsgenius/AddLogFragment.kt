@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
@@ -35,6 +36,17 @@ class AddLogFragment : DialogFragment() {
         fun newInstance(activityId: Int): AddLogFragment {
             val args = Bundle().apply { putInt(ARG_ACTIVITY_ID, activityId) }
             return AddLogFragment().apply { arguments = args }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.let { window ->
+            val params = window.attributes
+            // 95% of screen width
+            params.width = (resources.displayMetrics.widthPixels * 0.95).toInt()
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT
+            window.attributes = params
         }
     }
 

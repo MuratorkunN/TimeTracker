@@ -28,12 +28,14 @@ interface ActivityDao {
     @Query("SELECT * FROM activities WHERE isTimeTrackerActivity = 1 ORDER BY orderIndex ASC")
     fun getAllActivities(): Flow<List<Activity>>
 
+    // THE FIX: New DAO function to get ALL activities for the settings page.
+    @Query("SELECT * FROM activities ORDER BY orderIndex ASC")
+    fun getAllActivitiesForSettings(): Flow<List<Activity>>
+
     // This gets ONLY Data Entry activities for the "Add Data" screen
     @Query("SELECT * FROM activities WHERE isTimeTrackerActivity = 0 AND dataSetId = :dataSetId ORDER BY orderIndex ASC")
     fun getActivitiesForDataSet(dataSetId: Int): Flow<List<Activity>>
 
-    // *** NEW FUNCTION REQUIRED FOR MyDataViewModel ***
-    // This gets ALL activities (both types) for the "My Data" table screen
     @Query("SELECT * FROM activities WHERE dataSetId = :dataSetId ORDER BY orderIndex ASC")
     fun getAllActivitiesForDataSet(dataSetId: Int): Flow<List<Activity>>
 

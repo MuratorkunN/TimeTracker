@@ -4,10 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.roboticsgenius.databinding.FragmentSettingsBinding
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -75,7 +75,12 @@ class SettingsFragment : Fragment() {
                 }
             }
         )
-        binding.recyclerViewDelete.adapter = deletionAdapter
+        binding.recyclerViewDelete.apply {
+            adapter = deletionAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+            setHasFixedSize(true)
+            // we keep nestedScrollingEnabled="false" in XML so parent ScrollView won't intercept
+        }
     }
 
     private fun setupClickListeners() {
@@ -87,7 +92,7 @@ class SettingsFragment : Fragment() {
         val currentStartDate = viewModel.appStartDate.value
 
         val constraints = CalendarConstraints.Builder()
-            .setEnd(today) // Can't set start date to the future
+            .setEnd(today)
             .build()
 
         val picker = MaterialDatePicker.Builder.datePicker()
@@ -108,9 +113,7 @@ class SettingsFragment : Fragment() {
             .setTitle(title)
             .setMessage(message)
             .setNegativeButton("Cancel", null)
-            .setPositiveButton("Delete") { _, _ ->
-                onConfirm()
-            }
+            .setPositiveButton("Delete") { _, _ -> onConfirm() }
             .show()
     }
 
